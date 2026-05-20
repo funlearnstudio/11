@@ -1,681 +1,1672 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Roblox V21 - 速度修復版</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
-        
-        :root { 
-            --bg-base: #121212; 
-            --primary: #4dabf7; 
-            --accent: #ffd43b; 
-            --danger: #ff6b6b; 
-            --success: #51cf66; 
-            --glass-bg: rgba(30, 32, 35, 0.95);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --card-bg: rgba(255, 255, 255, 0.05);
-            --app-bg: radial-gradient(circle at center, #1a1b1e 0%, #000000 100%);
-            --text-main: #ffffff;
-            --text-sub: #adb5bd;
-        }
-
-        /* 黃金主題 */
-        body.theme-gold {
-            --primary: #fcc419; --accent: #fff; --danger: #ff8787;
-            --glass-bg: rgba(45, 38, 10, 0.95); --glass-border: rgba(255, 215, 0, 0.4); --card-bg: rgba(255, 215, 0, 0.1);
-            --app-bg: radial-gradient(circle at center, #423005 0%, #1a1200 100%);
-            --text-main: #fff9db; --text-sub: #e9ecef;
-        }
-
-        /* 鑽石主題 */
-        body.theme-diamond {
-            --primary: #00d2ff; --accent: #e0faff; --danger: #ff6b6b;
-            --glass-bg: rgba(10, 25, 45, 0.95); --glass-border: rgba(0, 210, 255, 0.5); --card-bg: rgba(0, 210, 255, 0.1);
-            --app-bg: radial-gradient(circle at center, #00284d 0%, #000814 100%);
-            --text-main: #e3fafc; --text-sub: #c5f6fa;
-        }
-
-        body { 
-            margin: 0; background: #000; color: var(--text-main); 
-            font-family: 'Fredoka', sans-serif; 
-            overflow: hidden; touch-action: none; user-select: none; 
-            display: flex; justify-content: center; align-items: center; height: 100vh; 
-        }
-        
-        #app { 
-            position: relative; width: 100%; max-width: 1024px; height: 100%; max-height: 768px; 
-            background: var(--app-bg); overflow: hidden; display: flex; flex-direction: column; 
-            box-shadow: 0 0 60px rgba(0,0,0,0.8); border-radius: 24px; 
-            border: 1px solid var(--glass-border); transition: background 0.5s ease;
-        }
-        canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-        
-        .layer { position: absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; display:none !important; flex-direction:column; }
-        .layer.active { display: flex !important; }
-        .interactive { pointer-events: auto; }
-        
-        .btn { 
-            padding: 10px 20px; border: none; border-radius: 12px; font-weight: bold; 
-            cursor: pointer; color: #212529; margin: 5px; font-size: 16px;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.2); transition: all 0.1s; 
-        }
-        .btn:active { transform: translateY(4px); box-shadow: none; }
-        .btn-blue { background: var(--primary); } .btn-red { background: var(--danger); color: white; } 
-        .btn-gold { background: var(--accent); } .btn-green { background: var(--success); color: white; }
-        .btn-lang { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.1); color: var(--text-main); border: 1px solid var(--glass-border); padding: 5px 10px; font-size: 12px; }
-
-        #toast { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); padding: 12px 30px; border-radius: 50px; color: white; z-index: 9999; display: none; border: 1px solid var(--primary); font-weight: bold; box-shadow: 0 10px 30px rgba(0,0,0,0.5); white-space: nowrap; }
-
-        /* Login */
-        #l-login { background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(8px); }
-        .card { background: var(--glass-bg); padding: 40px; border-radius: 24px; border: 1px solid var(--glass-border); text-align: center; width: 340px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); transition: background 0.5s; }
-        input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 2px solid var(--glass-border); background: rgba(0,0,0,0.2); color: var(--text-main); outline: none; text-align: center; font-size: 18px; }
-        input:focus { border-color: var(--primary); }
-        
-        /* Menu */
-        #l-menu { background: var(--glass-bg); z-index: 50; transition: background 0.5s; }
-        .top-bar { padding: 15px 25px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.2); align-items: center; border-bottom: 1px solid var(--glass-border); }
-        .main-view { flex: 1; display: flex; overflow: hidden; }
-        .sidebar { width: 200px; padding: 15px; background: rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 8px; border-right: 1px solid var(--glass-border); }
-        .tab { padding: 12px 15px; cursor: pointer; color: var(--text-sub); border-radius: 10px; font-weight: bold; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
-        .tab:hover { background: rgba(255,255,255,0.05); color: var(--text-main); }
-        .tab.active { background: var(--primary); color: #000; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        
-        .content { flex: 1; padding: 25px; overflow-y: auto; display: none; }
-        .content.active-grid { display: grid; gap: 20px; align-content: start; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-        
-        .game-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
-        .game-card:hover { transform: translateY(-5px); border-color: var(--primary); background: rgba(255,255,255,0.1); }
-        .icon-img { font-size: 48px; display: block; margin-bottom: 10px; }
-        .game-card h4 { margin: 5px 0; font-size: 18px; }
-        
-        .shop-item { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; }
-        .shop-item h4 { margin: 10px 0; color: var(--primary); font-size: 18px; }
-        .shop-item p { font-size: 13px; color: var(--text-sub); margin-bottom: 15px; flex: 1; }
-
-        /* HUD */
-        #l-game { z-index: 10; }
-        .hud { padding: 20px; display: flex; justify-content: space-between; pointer-events: none; }
-        .pill { background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.2); font-weight: bold; margin-right: 10px; display: inline-block; color: white; backdrop-filter: blur(4px); }
-        
-        .controls { position: absolute; bottom: 30px; width: 100%; height: 180px; pointer-events: none; }
-        .dpad { position: absolute; bottom: 0; left: 30px; width: 160px; height: 160px; }
-        .actions { position: absolute; bottom: 0; right: 30px; width: 160px; height: 100px; }
-        .c-btn { position: absolute; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto; backdrop-filter: blur(10px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); user-select: none; font-size: 24px; color: white; }
-        .c-btn:active, .c-btn.press { transform: scale(0.9); background: var(--primary); color: #000; }
-        
-        .b-u { top:0; left:55px; width:50px; height:50px; } .b-d { bottom:0; left:55px; width:50px; height:50px; }
-        .b-l { top:55px; left:0; width:50px; height:50px; } .b-r { top:55px; right:0; width:50px; height:50px; }
-        .b-a { right:0; bottom:10px; width:80px; height:80px; border-radius:50%; font-size:32px; }
-        .b-b { right:90px; bottom:0; width:60px; height:60px; border-radius:50%; font-size:20px; }
-
-        #l-modal { background: rgba(0,0,0,0.9); z-index: 200; justify-content: center; align-items: center; }
-        .key-hint { background: rgba(255,255,255,0.2); padding: 2px 6px; border-radius: 4px; font-family: monospace; border: 1px solid rgba(255,255,255,0.3); margin: 0 2px; display: inline-block;}
-        .gacha-anim { font-size: 60px; animation: pop 0.5s infinite alternate; }
-        @keyframes pop { from{transform:scale(1);} to{transform:scale(1.2);} }
-    </style>
-</head>
-<body>
-
-<div id="app">
-    <canvas id="cvs"></canvas>
-    <div id="toast">提示</div>
-
-    <!-- Login -->
-    <div id="l-login" class="layer active interactive">
-        <div class="card">
-            <button class="btn btn-lang" onclick="Lang.toggle()">English / 中文</button>
-            <h1 style="color:var(--primary); margin:0 0 10px 0; font-size: 40px;" data-t="app_title">3D 冒險盒</h1>
-            <p style="color:var(--text-sub); margin-bottom: 30px;" data-t="app_subtitle">V21 速度修復版</p>
-            <input type="text" id="uid" data-ph="login_placeholder">
-            <button class="btn btn-blue" style="width:100%; margin-top:10px;" onclick="Sys.login()" data-t="login_btn">開始冒險</button>
-        </div>
-    </div>
-
-    <!-- Menu -->
-    <div id="l-menu" class="layer interactive">
-        <div class="top-bar">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:40px; height:40px; background:var(--primary); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px;">👤</div>
-                <div>
-                    <div style="font-weight:bold; font-size:18px;"><span id="m-name">Guest</span> <span style="font-size:12px; color:var(--text-sub);">(Lv.<span id="m-lvl">1</span>)</span></div>
-                    <div style="font-size:12px; color:var(--text-sub);">Player ID</div>
-                </div>
-            </div>
-            <div style="display:flex; gap:20px; font-size:18px; font-weight:bold; background:rgba(0,0,0,0.3); padding:8px 20px; border-radius:50px; border:1px solid var(--glass-border);">
-                <span style="color:var(--accent)">💰 <span id="m-coin">0</span></span>
-                <span style="color:var(--danger)">💎 <span id="m-gem">0</span></span>
-            </div>
-        </div>
-        <div class="main-view">
-            <div class="sidebar">
-                <div class="tab active" onclick="Menu.sw('games', this)"><span style="font-size:20px;">🎮</span> <span data-t="tab_games">遊戲大廳</span></div>
-                <div class="tab" onclick="Menu.sw('shop', this)"><span style="font-size:20px;">🛒</span> <span data-t="tab_shop">道具商店</span></div>
-                <div class="tab" onclick="Menu.sw('bag', this)"><span style="font-size:20px;">🎒</span> <span data-t="tab_bag">我的背包</span></div>
-                <div class="tab" onclick="Menu.sw('ai', this)"><span style="font-size:20px;">🤖</span> <span data-t="tab_ai">AI 助手</span></div>
-                <div style="flex:1"></div>
-                <div class="tab" style="color:var(--danger)" onclick="Sys.logout()"><span style="font-size:20px;">🚪</span> <span data-t="btn_logout">登出</span></div>
-            </div>
-            
-            <div id="p-games" class="content active-grid"></div>
-            <div id="p-shop" class="content grid-layout"></div>
-            <div id="p-bag" class="content grid-layout"></div>
-            
-            <div id="p-ai" class="content">
-                <div id="chat-hist" style="height:calc(100% - 60px); background:rgba(0,0,0,0.2); border-radius:16px; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:15px; border:1px solid var(--glass-border);">
-                    <div style="color:var(--primary); font-weight:bold;" data-t="ai_welcome">AI: 嗨！需要攻略或賺錢建議嗎？</div>
-                </div>
-                <div style="display:flex; gap:15px; margin-top:15px;">
-                    <input id="chat-in" data-ph="ai_placeholder" style="flex:1; text-align:left; padding-left:20px; margin:0; font-size:16px; background:rgba(255,255,255,0.1);">
-                    <button class="btn btn-blue" style="margin:0; padding:0 30px;" onclick="AI.ask()" data-t="btn_send">發送</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- HUD -->
-    <div id="l-game" class="layer">
-        <div class="hud">
-            <div>
-                <span class="pill" style="border-color:var(--accent); color:var(--accent);"><span data-t="hud_level">Lv</span>.<span id="g-lvl">1</span></span>
-                <span class="pill" style="border-color:var(--primary); color:var(--primary);"><span data-t="hud_score">Score</span>:<span id="g-scr">0</span></span>
-                <span class="pill" style="border-color:var(--danger); color:var(--danger);"><span data-t="hud_hp">HP</span>:<span id="g-hp">100</span></span>
-            </div>
-            <div class="interactive">
-                <button class="btn btn-red" style="padding:8px 20px; margin:0;" onclick="Eng.pause()">II</button>
-            </div>
-        </div>
-        
-        <div class="controls interactive" id="ctrl-std">
-            <div class="dpad">
-                <div class="c-btn b-u" data-k="ArrowUp">▲</div>
-                <div class="c-btn b-d" data-k="ArrowDown">▼</div>
-                <div class="c-btn b-l" data-k="ArrowLeft">◀</div>
-                <div class="c-btn b-r" data-k="ArrowRight">▶</div>
-            </div>
-            <div class="actions">
-                <div class="c-btn b-a" data-k="KeyA">A</div>
-                <div class="c-btn b-b" data-k="KeyB">B</div>
-            </div>
-        </div>
-        
-        <div class="controls interactive" id="ctrl-rhy" style="display:none">
-             <div style="position:absolute; bottom:20px; width:100%; display:flex; justify-content:center; gap:15px;">
-                <div class="c-btn" style="position:relative; width:70px; height:90px; border-radius:10px;" data-k="KeyD">D</div>
-                <div class="c-btn" style="position:relative; width:70px; height:90px; border-radius:10px;" data-k="KeyF">F</div>
-                <div class="c-btn" style="position:relative; width:70px; height:90px; border-radius:10px;" data-k="KeyJ">J</div>
-                <div class="c-btn" style="position:relative; width:70px; height:90px; border-radius:10px;" data-k="KeyK">K</div>
-             </div>
-        </div>
-    </div>
-
-    <!-- Modal -->
-    <div id="l-modal" class="layer interactive">
-        <div class="card" style="width: 420px; max-width:90%;">
-            <h2 id="mo-title" style="color:var(--primary); margin-top:0; font-size:28px;">標題</h2>
-            <div id="mo-body" style="margin:25px 0; color:var(--text-sub); line-height:1.6; font-size:18px;">內容</div>
-            <div id="mo-foot"></div>
-        </div>
-    </div>
-</div>
-
-<script>
-/* --- 0. LANG --- */
-const Lang = (function() {
-    let cur = localStorage.getItem('rbx_lang') || 'zh-TW';
-    const data = {
-        "zh-TW": {
-            app_title: "3D 冒險盒", app_subtitle: "V21 速度修復版", login_placeholder: "輸入 ID 讀取存檔", login_btn: "開始冒險",
-            tab_games: "遊戲大廳", tab_shop: "道具商店", tab_bag: "我的背包", tab_ai: "AI 助手", btn_logout: "登出",
-            ai_welcome: "AI: 嗨！需要攻略或賺錢建議嗎？", ai_placeholder: "例如：迷宮怎麼過？", btn_send: "發送",
-            hud_score: "分數", hud_level: "關卡", hud_hp: "血量",
-            modal_pause: "暫停", modal_rest: "休息一下", btn_continue: "繼續", btn_exit: "離開",
-            btn_retry: "重試", btn_lobby: "回大廳", btn_next: "下一關", msg_win: "勝利！", msg_fail: "失敗",
-            msg_get_coin: "獲得金幣", shop_owned: "已擁有", shop_buy: "購買", shop_use: "使用",
-            bag_empty: "背包空空的...", bag_equip: "已裝備", bag_consumable: "消耗品",
-            toast_welcome: "歡迎回來", toast_new: "歡迎新玩家！獲得 1000 金幣！", toast_no_money: "金幣不足！",
-            toast_bought: "購買成功",
-            g_maze: "迷宮探險", g_space: "星際守護者", g_puzzle: "魔法推箱", g_race: "極速飄移",
-            g_horror: "恐怖醫院", g_rhythm: "節奏大師", g_snake: "貪吃蛇", g_jump: "跳跳樂",
-            g_break: "打磚塊", g_mem: "記憶翻牌", g_dodge: "彈幕閃避", g_click: "挖礦大亨",
-            i_gem: "神秘寶石袋", id_gem: "隨機獲得 10-100 寶石",
-            i_mag: "超級磁鐵", id_mag: "自動吸附金幣範圍+20%",
-            i_exp: "經驗藥水", id_exp: "立即獲得 500 經驗",
-            i_rev: "復活十字架", id_rev: "死亡時自動消耗復活",
-            i_spd: "風之靴", id_spd: "速度 +1",
-            i_hp: "紅寶石護符", id_hp: "血量 +20",
-            i_s1: "黃金霸主", id_s1: "解鎖奢華黃金介面",
-            i_s2: "鑽石星辰", id_s2: "解鎖科技鑽石介面",
-            i_key: "萬能鑰匙", id_key: "跳關道具"
-        },
-        "en": {
-            app_title: "3D Adventure Box", app_subtitle: "V21 Speed Fixed", login_placeholder: "Enter ID", login_btn: "Start",
-            tab_games: "Games", tab_shop: "Shop", tab_bag: "Inventory", tab_ai: "AI", btn_logout: "Logout",
-            ai_welcome: "AI: Hi! Need tips?", ai_placeholder: "e.g. How to play?", btn_send: "Send",
-            hud_score: "Score", hud_level: "Lv.", hud_hp: "HP",
-            modal_pause: "Paused", modal_rest: "Rest", btn_continue: "Resume", btn_exit: "Exit",
-            btn_retry: "Retry", btn_lobby: "Lobby", btn_next: "Next Level", msg_win: "Victory!", msg_fail: "Defeat",
-            msg_get_coin: "Coins Earned", shop_owned: "Owned", shop_buy: "Buy", shop_use: "Use",
-            bag_empty: "Inventory empty...", bag_equip: "Equipped",
-            toast_welcome: "Welcome back", toast_new: "Welcome! +1000 Coins!", toast_no_money: "Not enough coins!",
-            toast_bought: "Purchased",
-            g_maze: "Maze Runner", g_space: "Space Guardian", g_puzzle: "Sokoban", g_race: "Speed Racer",
-            g_horror: "Horror Hospital", g_rhythm: "Rhythm Master", g_snake: "Snake", g_jump: "Jumper",
-            g_break: "Breakout", g_mem: "Memory Flip", g_dodge: "Dodger", g_click: "Mining Tycoon",
-            i_gem: "Gem Bag", id_gem: "Random 10-100 Gems",
-            i_mag: "Super Magnet", id_mag: "Bigger Hitbox/Range",
-            i_exp: "EXP Potion", id_exp: "+500 EXP",
-            i_rev: "Revive Cross", id_rev: "Auto consume to revive",
-            i_spd: "Wind Boots", id_spd: "Speed +1 (Passive)",
-            i_hp: "Ruby Amulet", id_hp: "HP +20 (Passive)",
-            i_s1: "Gold Theme", id_s1: "Unlock Gold UI",
-            i_s2: "Diamond Theme", id_s2: "Unlock Diamond UI",
-            i_key: "Master Key", id_key: "Skip Level"
-        }
-    };
-    function t(key) { return data[cur][key] || key; }
-    function toggle() { cur = cur === 'zh-TW' ? 'en' : 'zh-TW'; localStorage.setItem('rbx_lang', cur); apply(); }
-    function apply() {
-        document.querySelectorAll('[data-t]').forEach(el => el.innerText = t(el.dataset.t));
-        document.querySelectorAll('[data-ph]').forEach(el => el.placeholder = t(el.dataset.ph));
-        if(document.getElementById('l-menu').classList.contains('active')) Menu.init();
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>美西大冒險：公路黃金大卷軸 🗺️</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Playfair Display & Noto Serif TC -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Noto Serif TC', serif;
+      background-color: #1a0f0d;
+      background-image: radial-gradient(circle, #2c1611 0%, #0f0706 100%);
+      color: #3e2723;
     }
-    setTimeout(apply, 10);
-    return { t, toggle, get cur(){return cur} };
-})();
 
-/* --- 1. SYSTEM CORE --- */
-const Sys = (function() {
-    let user = { id:'', coins:0, gems:0, level:1, exp:0, bag:[], stats:{spd:0, hp:0}, progress:{}, theme:'default' };
-    const items = [
-        {id:'gem_pack', t:'i_gem', d:'id_gem', price:500, type:'gacha', icon:'💎'},
-        {id:'magnet', t:'i_mag', d:'id_mag', price:800, type:'passive', val:1, icon:'🧲'},
-        {id:'potion_exp', t:'i_exp', d:'id_exp', price:1000, type:'use', val:500, icon:'🧪'},
-        {id:'revive', t:'i_rev', d:'id_rev', price:1500, type:'item', val:1, icon:'✝️'},
-        {id:'key', t:'i_key', d:'id_key', price:100, type:'key', val:1, icon:'🔑'},
-        {id:'spd1', t:'i_spd', d:'id_spd', price:200, type:'spd', val:1, icon:'👟'},
-        {id:'hp1', t:'i_hp', d:'id_hp', price:300, type:'hp', val:20, icon:'❤️'},
-        {id:'skin1', t:'i_s1', d:'id_s1', price:5000, type:'skin', val:1, icon:'🏆'},
-        {id:'skin2', t:'i_s2', d:'id_s2', price:10000, type:'skin', val:2, icon:'💠'}
+    /* 羊皮紙質感背景 */
+    .parchment {
+      background: radial-gradient(circle, #fbf2e3 50%, #e8d0b5 100%);
+      box-shadow: 
+        inset 0 0 50px rgba(139, 94, 60, 0.4),
+        0 15px 30px rgba(0, 0, 0, 0.5),
+        0 0 0 10px #2a1a15;
+      border: 3px double #8b5e3c;
+      position: relative;
+    }
+
+    /* 焦邊效果 */
+    .burnt-edge {
+      position: relative;
+    }
+    .burnt-edge::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 20px rgba(62, 39, 35, 0.5);
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    /* 遊戲卡牌懸浮效果 */
+    .adventure-card {
+      background: #fdfaf4;
+      border: 2px solid #bda387;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .adventure-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 10px 20px rgba(139, 94, 60, 0.25);
+      border-color: #8b5e3c;
+    }
+
+    /* 自訂滾動條 */
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #2a1a15;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #8b5e3c;
+      border: 2px solid #2a1a15;
+      border-radius: 5px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #c68a5c;
+    }
+
+    /* 物理金幣雨 Canvas */
+    #goldCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* 蓋印章動畫 */
+    @keyframes stampPress {
+      0% { transform: scale(4); opacity: 0; filter: blur(5px); }
+      50% { transform: scale(0.9); opacity: 0.8; filter: none; }
+      70% { transform: scale(1.1); }
+      100% { transform: scale(1) rotate(-8deg); opacity: 1; }
+    }
+    .stamp-active {
+      display: flex !important;
+      animation: stampPress 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
+    }
+
+    /* 越野車地圖行進動畫 */
+    @keyframes carDrive {
+      0% { stroke-dashoffset: 1000; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .map-path-active {
+      stroke-dasharray: 10;
+      animation: dash 30s linear infinite;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+
+    /* 旋轉羅盤 */
+    .compass-spin {
+      animation: spin 12s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 閃爍法陣動畫 */
+    @keyframes portalPulse {
+      0%, 100% { box-shadow: 0 0 15px rgba(139, 94, 60, 0.2); border-color: #8b5e3c; }
+      50% { box-shadow: 0 0 25px rgba(217, 119, 6, 0.5); border-color: #d97706; }
+    }
+    .portal-pulse {
+      animation: portalPulse 3s infinite;
+    }
+  </style>
+</head>
+<body class="overflow-x-hidden">
+
+  <!-- 物理金幣與印章特效畫布 -->
+  <canvas id="goldCanvas"></canvas>
+
+  <!-- 全螢幕開場藏寶箱動畫 (Intro) -->
+  <div id="gameIntro" class="fixed inset-0 bg-[#0f0706] z-[10000] flex flex-col items-center justify-center text-center p-4 transition-all duration-1000">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-950/20 via-transparent to-black pointer-events-none"></div>
+    <div class="relative max-w-xl bg-[#2a1a15] border-4 border-[#8b5e3c] p-8 rounded-3xl shadow-2xl space-y-6">
+      <div class="flex justify-center">
+        <div class="w-24 h-24 bg-[#1a0f0d] rounded-full border-4 border-[#ca8a04] flex items-center justify-center shadow-lg relative">
+          <i id="introCompassIcon" data-lucide="compass" class="w-16 h-16 text-[#ca8a04] compass-spin"></i>
+        </div>
+      </div>
+      <h1 class="text-3xl md:text-5xl font-black text-amber-100 tracking-widest font-serif drop-shadow-md">
+        美西大冒險 🗺️<br>
+        <span class="text-xl md:text-2xl text-[#c68a5c]">公路黃金大卷軸</span>
+      </h1>
+      <p class="text-sm text-stone-300 italic leading-relaxed">
+        「召集 Chris、Steve、Orinda、Jamilee！啟封神秘的跨州公路尋寶圖，踏上長達 14 天的狂野公路冒險，解鎖亞利桑那與加州的黃金秘寶！」
+      </p>
+      
+      <!-- 此按鈕點擊後將會正常呼叫 JavaScript 中的 startGame 函數 -->
+      <button onclick="startGame()" class="relative overflow-hidden group bg-gradient-to-r from-amber-600 to-amber-800 text-amber-50 font-black px-8 py-4 rounded-xl border-2 border-amber-400 shadow-xl transition-all hover:scale-105 active:scale-95 text-lg tracking-wider">
+        <span class="relative z-10 flex items-center gap-2">
+          <i data-lucide="key" class="w-5 h-5 animate-bounce"></i>
+          啟封藏寶圖
+        </span>
+        <div class="absolute inset-0 bg-amber-500 opacity-0 group-hover:opacity-20 transition-opacity"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 主網頁架構 -->
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    
+    <!-- 遊戲風頂部導覽列 -->
+    <header class="parchment rounded-3xl burnt-edge p-6 md:p-8 mb-8 text-center text-[#3e2723]">
+      <div class="absolute top-2 left-2 text-xl opacity-35">🧭</div>
+      <div class="absolute top-2 right-2 text-xl opacity-35">📜</div>
+      <div class="inline-flex items-center gap-2 bg-[#8b5e3c]/20 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase mb-3 border border-[#8b5e3c]/40">
+        <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-900"></i>
+        West Coast Highway Adventure • 2026
+      </div>
+      <h1 class="text-3xl md:text-5xl font-black tracking-wide text-[#3e2723] font-serif">
+        美西自駕公路金幣探險
+      </h1>
+      <p class="mt-2 text-xs md:text-sm font-bold text-[#5d4037] italic">
+        4 大州、14 天狂野遠征：洛杉磯 ➔ 拉斯維加斯 ➔ 大峽谷 ➔ 佩吉 ➔ 舊金山
+      </p>
+      
+      <div class="mt-4 flex flex-wrap justify-center gap-6 text-xs font-bold text-[#5d4037]">
+        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 05/23 － 06/05</span>
+        <span class="flex items-center gap-1"><i data-lucide="users" class="w-4 h-4"></i> 冒險隊員：Chris, Steve, Orinda, Jamilee</span>
+      </div>
+    </header>
+
+    <!-- 冒險選單 (古老木牌風格 Tabs) -->
+    <nav class="flex overflow-x-auto no-scrollbar gap-2 mb-8 pb-2 justify-start md:justify-center">
+      <button onclick="switchTab('budget')" id="tab-budget" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md">
+        <span class="text-sm">💰 尋寶分贓帳本</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">雲端 GAS 存檔系統</span>
+      </button>
+      <button onclick="switchTab('timeline')" id="tab-timeline" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
+        <span class="text-sm">📜 14日航海日誌</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">每日行程與慶生</span>
+      </button>
+      <button onclick="switchTab('map')" id="tab-map" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
+        <span class="text-sm">🗺️ 探險航線地圖</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">美西公路自駕線</span>
+      </button>
+      <button onclick="switchTab('food')" id="tab-food" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
+        <span class="text-sm">🍖 荒野補給打卡</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">美西美食 YUM</span>
+      </button>
+      <button onclick="switchTab('prep')" id="tab-prep" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
+        <span class="text-sm">🎒 備戰打包指南</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">行前清單與行李</span>
+      </button>
+      <button onclick="switchTab('toolkit')" id="tab-toolkit" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
+        <span class="text-sm">⚙️ 冒險生存工具</span>
+        <span class="text-[9px] font-normal opacity-80 mt-0.5">時差對照與換算</span>
+      </button>
+    </nav>
+
+    <!-- ==================== TAB 5: 尋寶分贓帳本 ==================== -->
+    <section id="content-budget" class="space-y-8">
+      
+      <!-- GAS 雲端儲存同步面板 (一鍵存檔神器) -->
+      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge portal-pulse border-2 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6">
+        <div class="space-y-1">
+          <h2 class="text-xl font-black flex items-center gap-2 text-[#d97706]">
+            <i data-lucide="cloud-lightning" class="w-6 h-6 animate-pulse"></i>
+            雲端傳音法陣 (Google Sheet 永久存檔備份)
+          </h2>
+          <p class="text-xs text-[#5d4037]/80 italic">
+            「在此輸入您部署的 GAS Web App URL，隨時在各隊員手機間一鍵同步最新帳本數據、補給、打包狀態！」
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3 items-center">
+          <input type="text" id="gasUrlInput" placeholder="貼上您的 GAS Web App 部署網址..." class="w-full sm:w-72 bg-[#fbf8f3] border-2 border-[#8b5e3c]/60 text-xs font-bold p-2.5 rounded-lg focus:border-[#d97706] focus:outline-none placeholder-[#8b5e3c]/40 text-[#3e2723]">
+          
+          <div class="flex gap-2 w-full sm:w-auto">
+            <button id="btnUploadCloud" onclick="saveToGasCloud()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#d97706] hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg text-xs font-black transition-all shadow-md">
+              <i data-lucide="cloud-upload" class="w-4 h-4"></i> 上傳雲端
+            </button>
+            <button id="btnDownloadCloud" onclick="loadFromGasCloud()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-amber-800 hover:bg-amber-950 text-white px-4 py-2.5 rounded-lg text-xs font-black transition-all shadow-md">
+              <i data-lucide="cloud-download" class="w-4 h-4"></i> 拉取更新
+            </button>
+            <button onclick="openGasSetupModal()" class="bg-[#3e2723] hover:bg-black text-[#f5e6d3] p-2.5 rounded-lg text-xs font-black transition-all" title="查看設定與腳本教學">
+              <i data-lucide="help-circle" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 記帳大卷軸控制區 -->
+      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <h2 class="text-2xl font-black flex items-center gap-2 text-[#5d4037]">
+            <i data-lucide="feather" class="w-6 h-6 text-[#8b5e3c]"></i>
+            黃金分贓大卷軸 (真實探險版)
+          </h2>
+          <p class="text-xs text-[#5d4037]/80 mt-1 italic">
+            「Chris、Steve、Orinda、Jamilee 的真實帳本。所有欄位均為零支出，等待大夥開闢公路新世界！」
+          </p>
+        </div>
+        
+        <div class="flex flex-wrap gap-2">
+          <button onclick="exportData()" class="flex items-center gap-1.5 bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-md">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> 導出本地備份 (JSON)
+          </button>
+          <label class="flex items-center gap-1.5 bg-[#5d4037] hover:bg-[#3e2723] text-amber-50 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i> 載入本地備份
+            <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- 記帳主面板三足鼎立 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- 左欄：冒險名冊 -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="parchment p-6 rounded-2xl burnt-edge">
+            <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
+              <i data-lucide="compass" class="w-5 h-5 text-[#8b5e3c]"></i>
+              冒險者隊員名冊
+            </h3>
+            
+            <form onsubmit="addMember(event)" class="flex gap-2 mb-4">
+              <input type="text" id="newMemberInput" placeholder="輸入新成員名..." class="flex-1 bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none placeholder-[#8b5e3c]/40 text-[#3e2723]">
+              <button type="submit" class="bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 text-xs font-black px-4 py-2.5 rounded-lg transition-all">
+                加入
+              </button>
+            </form>
+
+            <div id="membersList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <!-- JS 動態生成 -->
+            </div>
+            <p id="memberWarning" class="text-[10px] text-rose-800 italic mt-2 hidden">⚠️ 隊伍不可空無一人！</p>
+          </div>
+
+          <div class="bg-[#e8d0b5]/50 border border-[#8b5e3c]/40 p-5 rounded-2xl space-y-2 text-xs text-[#5d4037]">
+            <h4 class="font-black flex items-center gap-1.5 text-[#3e2723]">
+              <i data-lucide="shield-alert" class="w-4 h-4"></i> 自駕計費指南
+            </h4>
+            <p class="leading-relaxed italic">
+              美國自駕常會產生 **過路費 (FasTrak)** 與多次 **加油費用 (Gas)**，最適合全部登錄在此，等回台灣或旅行最後一天一鍵清算。
+            </p>
+          </div>
+        </div>
+
+        <!-- 中欄：新增帳單 -->
+        <div class="lg:col-span-4">
+          <div id="expenseFormCard" class="parchment p-6 rounded-2xl burnt-edge h-full relative">
+            
+            <!-- 印章動畫層 -->
+            <div id="stampOverlay" class="absolute inset-0 bg-rose-900/10 z-50 hidden items-center justify-center pointer-events-none">
+              <div class="stamp-mark border-4 border-rose-700 text-rose-700 font-extrabold text-2xl rotate-12 px-6 py-2 rounded-lg bg-white/95 shadow-2xl">
+                ⚖️ 記帳認證
+              </div>
+            </div>
+
+            <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
+              <i data-lucide="feather" class="w-5 h-5 text-[#8b5e3c]"></i>
+              登記本次開銷
+            </h3>
+            
+            <form onsubmit="addExpense(event)" class="space-y-4">
+              <div>
+                <label class="block text-xs font-black text-[#5d4037] mb-1">🪙 帳目大名 (如：租車、晚餐、過路費)</label>
+                <input type="text" id="expTitle" required placeholder="請輸入開銷說明..." class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-black text-[#5d4037] mb-1">💰 金額 ($ 美元)</label>
+                  <input type="number" step="0.01" id="expAmount" required placeholder="0.00" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
+                </div>
+                <div>
+                  <label class="block text-xs font-black text-[#5d4037] mb-1">🏷️ 類別</label>
+                  <select id="expCategory" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
+                    <option value="交通">🚗 交通自駕</option>
+                    <option value="餐飲">🍴 荒野補給</option>
+                    <option value="門票">🎟️ 景點門票</option>
+                    <option value="住宿">🏡 沙漠營地</option>
+                    <option value="其他">📦 探險雜支</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-black text-[#5d4037] mb-1">👤 先掏出金幣的人 (墊款者)</label>
+                <select id="expPayer" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
+                  <!-- JS 動態生成 -->
+                </select>
+              </div>
+
+              <button type="submit" class="w-full bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 font-black py-3 px-4 rounded-xl text-xs transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                <i data-lucide="coins" class="w-4 h-4 animate-bounce"></i>
+                將此筆費用蓋印登帳
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 右欄：黃金總帳看板 -->
+        <div class="lg:col-span-4 space-y-6">
+          <div class="bg-[#3e2723] text-[#f5e6d3] p-6 rounded-2xl border-2 border-[#8b5e3c] shadow-2xl text-center relative overflow-hidden">
+            <div class="absolute top-0 right-0 opacity-10 text-8xl font-black">👑</div>
+            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-black">💰 旅途消耗黃金總量</span>
+            <h3 id="totalExpensesDisplay" class="text-4xl font-extrabold mt-1.5 text-amber-100">$0.00</h3>
+            <div class="text-[10px] text-stone-300 mt-0.5">USD (美元金幣)</div>
+            
+            <div class="border-t border-[#8b5e3c]/60 mt-4 pt-4">
+              <span id="averageLabel" class="text-[10px] text-amber-300 uppercase tracking-widest font-black">⚖️ 每人應平攤</span>
+              <h4 id="avgExpensesDisplay" class="text-2xl font-extrabold mt-1 text-amber-300">$0.00</h4>
+            </div>
+          </div>
+
+          <!-- 出資平衡表 -->
+          <div class="parchment p-5 rounded-2xl burnt-edge">
+            <h4 class="font-black text-xs text-[#5d4037] mb-3 border-b border-[#8b5e3c]/30 pb-1.5 flex items-center gap-1.5">
+              <i data-lucide="bar-chart-3" class="w-4 h-4 text-[#8b5e3c]"></i>
+              每人分贓平衡狀況
+            </h4>
+            <div id="balanceSheet" class="space-y-2 text-xs">
+              <!-- JS 動態生成 -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 下半大版塊：歷史明細與最優清償指南 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- 左：歷史明細 -->
+        <div class="lg:col-span-7 parchment p-6 rounded-2xl burnt-edge">
+          <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
+            <i data-lucide="scroll" class="w-5 h-5 text-[#8b5e3c]"></i>
+            羊皮紙歷史明細 
+            <span id="expenseCount" class="text-xs bg-[#8b5e3c] text-amber-50 font-black px-2.5 py-0.5 rounded-full ml-1">0 筆</span>
+          </h3>
+          
+          <div id="expensesHistoryList" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+            <!-- JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 右：最優清算配對 (貪婪最小流算法) -->
+        <div class="lg:col-span-5">
+          <div class="parchment p-6 rounded-2xl border-4 border-double border-[#8b5e3c] bg-gradient-to-b from-[#f9f2e7] to-[#e6ccb2] h-full flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between border-b border-[#8b5e3c]/30 pb-2 mb-4">
+                <h3 class="font-black text-sm flex items-center gap-1.5 text-[#5d4037]">
+                  <i data-lucide="compass" class="w-4 h-4"></i> 債務清償結算 (分贓最速路徑)
+                </h3>
+                <button onclick="copyDebtsToClipboard()" class="bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 text-[10px] font-black px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i> 抄寫並分享
+                </button>
+              </div>
+
+              <div id="optimizedDebtsList" class="space-y-3">
+                <!-- JS 動態生成最小轉帳步驟 -->
+              </div>
+            </div>
+
+            <p class="text-[10px] text-stone-600 italic text-center mt-6 pt-4 border-t border-[#8b5e3c]/20">
+              📢 每次增刪記帳，黃金羅盤均會自動重新進行最佳化清算配對！
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 1: 14天每日行程 (Timeline) ==================== -->
+    <section id="content-timeline" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- 左：天數快選 -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="parchment p-5 rounded-2xl burnt-edge">
+            <h3 class="font-black text-slate-800 flex items-center gap-2 mb-3 text-sm">
+              <i data-lucide="calendar" class="w-4 h-4 text-amber-800"></i>
+              航行大誌
+            </h3>
+            <div id="dayGridSelector" class="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-4 gap-2">
+              <!-- JS 動態生成天數格子 -->
+            </div>
+          </div>
+
+          <!-- 壽星指示 -->
+          <div class="bg-gradient-to-br from-rose-50 to-orange-50 p-5 rounded-2xl border border-rose-200/60 shadow-sm relative overflow-hidden">
+            <div class="absolute top-2 right-2 text-4xl opacity-20">🎂</div>
+            <h4 class="font-black text-rose-800 text-xs flex items-center gap-1.5">
+              <i data-lucide="gift" class="w-4 h-4 text-rose-600"></i> 旅途驚喜慶生日曆
+            </h4>
+            <div class="mt-3 space-y-2 text-xs">
+              <div onclick="selectDay(2)" class="flex items-center justify-between bg-white/85 p-2 rounded-lg cursor-pointer hover:bg-white border border-amber-100 transition-all">
+                <div>
+                  <span class="text-[10px] font-bold text-rose-700">Day 3 (05/25)</span>
+                  <p class="font-black text-stone-800">🎂 Chris 生日大驚喜</p>
+                </div>
+                <span class="text-[9px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">約書亞樹</span>
+              </div>
+              <div onclick="selectDay(5)" class="flex items-center justify-between bg-white/85 p-2 rounded-lg cursor-pointer hover:bg-white border border-amber-100 transition-all">
+                <div>
+                  <span class="text-[10px] font-bold text-rose-700">Day 6 (05/28)</span>
+                  <p class="font-black text-stone-800">🎂 Steve 生日大慶典</p>
+                </div>
+                <span class="text-[9px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">大峽谷</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右：單日詳細資訊 -->
+        <div id="dayDetailCard" class="lg:col-span-8">
+          <!-- JS 動態渲染天數詳細卡片 -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: 自駕路線圖 ==================== -->
+    <section id="content-map" class="hidden space-y-6">
+      <div class="parchment p-6 rounded-2xl burnt-edge">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2">
+              <i data-lucide="map" class="w-6 h-6 text-[#8b5e3c]"></i>
+              美西 4 大州自駕藏寶路線圖
+            </h2>
+            <p class="text-stone-700 text-xs mt-1 italic">
+              「點擊黃金錨點，能讓探險越野車在航線上奔馳！並查看該地神祕景點介紹。」
+            </p>
+          </div>
+          <button onclick="playCarHorn()" class="bg-[#8b5e3c] text-amber-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#3e2723] flex items-center gap-1">
+            <i data-lucide="volume-2" class="w-4 h-4"></i> 鳴響越野車笛 🚗💨
+          </button>
+        </div>
+
+        <!-- 擬真復古尋寶地圖 SVG -->
+        <div class="mt-6 bg-[#160e0d] p-4 md:p-8 rounded-2xl shadow-inner border border-amber-950 relative overflow-hidden">
+          <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#8b5e3c_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          
+          <div class="relative max-w-2xl mx-auto">
+            <svg viewBox="0 0 800 500" class="w-full h-auto drop-shadow-2xl">
+              <!-- 底層公路連接線 -->
+              <path id="highwayPath" d="M 150,380 L 250,380 L 320,260 L 480,310 L 580,280" fill="none" stroke="#ca8a04" stroke-width="4" stroke-linecap="round" class="map-path-active" />
+              <!-- 國內航線 -->
+              <path d="M 320,260 Q 230,190 150,150" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="8,6" opacity="0.6" />
+
+              <!-- 地名大標 -->
+              <text x="80" y="420" fill="#a16207" font-weight="900" font-size="12">洛杉磯 (Day 1-2)</text>
+              <text x="210" y="425" fill="#ca8a04" font-weight="900" font-size="12">約書亞樹🌵 (Day 3)</text>
+              <text x="240" y="235" fill="#ef4444" font-weight="900" font-size="12">拉斯維加斯🎲 (Day 4-5)</text>
+              <text x="440" y="345" fill="#f97316" font-weight="900" font-size="12">大峽谷南口🌲 (Day 6)</text>
+              <text x="560" y="250" fill="#f97316" font-weight="900" font-size="12">佩吉市/羚羊谷✨ (Day 6-8)</text>
+              <text x="80" y="130" fill="#06b6d4" font-weight="900" font-size="12">舊金山金門大橋🌉 (Day 8-12)</text>
+
+              <!-- 動態前進小車標誌 -->
+              <g id="mapCarGroup" transform="translate(150,380) scale(1.5)" class="transition-all duration-1000 ease-out">
+                <circle cx="0" cy="0" r="10" fill="#ef4444" opacity="0.3" class="animate-ping" />
+                <text x="-6" y="5" font-size="14">🚗</text>
+              </g>
+
+              <!-- 錨點1: 洛杉磯 -->
+              <g onclick="driveToPoint(150, 380, 0)" class="cursor-pointer group">
+                <circle cx="150" cy="380" r="12" fill="#eab308" class="group-hover:scale-125 transition-all" />
+                <circle cx="150" cy="380" r="6" fill="#3e2723" />
+              </g>
+
+              <!-- 錨點2: 約書亞樹 -->
+              <g onclick="driveToPoint(250, 380, 2)" class="cursor-pointer group">
+                <circle cx="250" cy="380" r="12" fill="#ca8a04" class="group-hover:scale-125 transition-all" />
+                <circle cx="250" cy="380" r="6" fill="#3e2723" />
+              </g>
+
+              <!-- 錨點3: 拉斯維加斯 -->
+              <g onclick="driveToPoint(320, 260, 3)" class="cursor-pointer group">
+                <circle cx="320" cy="260" r="12" fill="#ef4444" class="group-hover:scale-125 transition-all" />
+                <circle cx="320" cy="260" r="6" fill="#3e2723" />
+              </g>
+
+              <!-- 錨點4: 大峽谷 -->
+              <g onclick="driveToPoint(480, 310, 5)" class="cursor-pointer group">
+                <circle cx="480" cy="310" r="12" fill="#f97316" class="group-hover:scale-125 transition-all" />
+                <circle cx="480" cy="310" r="6" fill="#3e2723" />
+              </g>
+
+              <!-- 錨點5: 佩吉市 -->
+              <g onclick="driveToPoint(580, 280, 6)" class="cursor-pointer group">
+                <circle cx="580" cy="280" r="12" fill="#f97316" class="group-hover:scale-125 transition-all" />
+                <circle cx="580" cy="280" r="6" fill="#3e2723" />
+              </g>
+
+              <!-- 錨點6: 舊金山 -->
+              <g onclick="driveToPoint(150, 150, 8)" class="cursor-pointer group">
+                <circle cx="150" cy="150" r="14" fill="#06b6d4" class="group-hover:scale-125 transition-all" />
+                <circle cx="150" cy="150" r="6" fill="#3e2723" />
+              </g>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: 荒野補給美食 ==================== -->
+    <section id="content-food" class="hidden space-y-6">
+      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge">
+        <div class="flex justify-between items-center border-b border-[#8b5e3c]/30 pb-4 mb-6">
+          <div>
+            <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2 animate-bounce">
+              <i data-lucide="utensils" class="w-6 h-6 text-[#8b5e3c]"></i>
+              美西公路大補給清單
+            </h2>
+            <p class="text-stone-700 text-xs italic">「大夥在美西公路開車，每吃到一個必吃名產，別忘了點擊勾選打卡解鎖！」</p>
+          </div>
+          <div id="foodProgressBadge" class="bg-[#8b5e3c] text-amber-50 px-3.5 py-1 rounded-full text-xs font-black shadow-lg">
+            解鎖進度: 0 / 8
+          </div>
+        </div>
+
+        <div id="foodGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- JS 動態渲染卡牌 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: 備戰打包指南 ==================== -->
+    <section id="content-prep" class="hidden space-y-6">
+      <div class="parchment p-6 rounded-2xl burnt-edge">
+        <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2">
+          <i data-lucide="briefcase" class="w-5 h-5 text-[#8b5e3c]"></i>
+          美國自駕出入境隨身安檢包
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="bg-rose-50/60 border border-rose-200 p-4 rounded-xl text-xs space-y-2 text-rose-950">
+            <h4 class="font-black flex items-center gap-1.5 text-rose-900"><i data-lucide="shield-check" class="w-4 h-4"></i> 證照文件與金流</h4>
+            <ul class="list-disc pl-4 space-y-1 text-rose-900/80 italic font-bold">
+              <li>確認台灣護照正本效期是否滿 6 個月以上！</li>
+              <li>ESTA 電子簽證許可：務必確認通過狀態，列印紙本備用！</li>
+              <li>自駕保命索：台灣駕照 + 國際駕照雙證缺一不可！</li>
+            </ul>
+          </div>
+          <div class="bg-amber-50/60 border border-amber-200 p-4 rounded-xl text-xs space-y-2 text-amber-950">
+            <h4 class="font-black flex items-center gap-1.5 text-amber-900"><i data-lucide="alert-triangle" class="w-4 h-4"></i> TSA 隨身攜帶液體限制</h4>
+            <p class="italic text-amber-900/80 leading-relaxed font-bold">
+              每位旅客限帶一個 <strong>1公升容量(約20x20cm)且可重複密封的透明塑膠袋</strong>。所有液體、膠狀物品容器必須 <strong>≤ 100ml (3.4盎司)</strong>，安檢時需單獨取出手檢！
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 行李打包進度格 -->
+      <div class="parchment p-6 rounded-2xl burnt-edge">
+        <div class="flex justify-between items-center border-b border-[#8b5e3c]/30 pb-3 mb-6">
+          <h3 class="font-black text-[#3e2723] text-sm flex items-center gap-2">
+            <i data-lucide="check-square" class="w-4 h-4 text-[#8b5e3c]"></i>
+            冒險家行前打包進度格
+          </h3>
+          <span id="packProgressBadge" class="bg-[#8b5e3c] text-amber-50 text-[10px] font-black px-2.5 py-1 rounded">
+            已裝箱：0 / 10
+          </span>
+        </div>
+
+        <div id="prepItemsGrid" class="space-y-6">
+          <!-- JS 依類別動態渲染打勾方格 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: 求生工具箱 ==================== -->
+    <section id="content-toolkit" class="hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
+        <!-- 時差對照 -->
+        <div class="parchment p-6 rounded-2xl burnt-edge text-stone-900 space-y-4">
+          <h3 class="font-black text-[#3e2723] flex items-center gap-2 text-base">
+            <i data-lucide="clock" class="w-5 h-5 text-[#8b5e3c]"></i>
+            太平洋/山區夏令時間對照晷
+          </h3>
+          <p class="text-xs text-stone-600 italic">
+            「拖曳台灣日晷，能算出美西太平洋沿岸(洛杉磯、舊金山、拉斯維加斯)與大峽谷山區時間！」
+          </p>
+
+          <div class="bg-[#fdfaf3] p-5 rounded-xl border-2 border-[#bda387]/50 space-y-4">
+            <div>
+              <label class="block text-xs font-black text-[#5d4037] mb-2">🕛 台灣時光（TPE）：</label>
+              <div class="flex items-center gap-4">
+                <input type="range" id="tpeTimeSlider" min="0" max="23" value="12" class="w-full accent-amber-800 cursor-pointer" oninput="convertTime()">
+                <span id="tpeTimeDisplay" class="font-black text-[#3e2723] text-sm shrink-0 w-12 text-right">12:00</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-center">
+              <div class="bg-white p-3.5 rounded-lg border border-stone-200">
+                <span class="text-[10px] text-stone-500 block font-bold">加州 / 內華達 (PDT)</span>
+                <span id="pdtTimeDisplay" class="text-lg font-black text-amber-800 block mt-1">21:00</span>
+                <span id="pdtDayLabel" class="text-[9px] text-stone-400 font-bold">前一天</span>
+              </div>
+              <div class="bg-white p-3.5 rounded-lg border border-stone-200">
+                <span class="text-[10px] text-stone-500 block font-bold">亞利桑那 (MST)</span>
+                <span id="mstTimeDisplay" class="text-lg font-black text-rose-800 block mt-1">21:00</span>
+                <span id="mstDayLabel" class="text-[9px] text-stone-400 font-bold">前一天</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 單位指南針 -->
+        <div class="parchment p-6 rounded-2xl burnt-edge text-stone-900 space-y-4">
+          <h3 class="font-black text-[#3e2723] flex items-center gap-2 text-base">
+            <i data-lucide="compass" class="w-5 h-5 text-[#8b5e3c]"></i>
+            美國自駕求生單位指南針
+          </h3>
+          <p class="text-xs text-stone-600 italic">美國的限速是英里(Mile)，加油加加侖(Gallon)，天氣預報是華氏(°F)，快用天平快速對照！</p>
+          
+          <div class="space-y-3.5 text-xs font-bold">
+            <!-- 溫度 -->
+            <div class="bg-[#fdfaf3] p-3 rounded-xl border border-[#bda387]/40">
+              <span class="text-[10px] text-stone-500 block mb-1">華氏溫度 ⇄ 攝氏溫度 (°F ⇄ °C)</span>
+              <div class="flex items-center gap-3">
+                <input type="number" id="fVal" value="77" oninput="calcUnit('F')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
+                <span>°F ⇄</span>
+                <input type="number" id="cVal" value="25" oninput="calcUnit('C')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
+                <span>°C</span>
+              </div>
+            </div>
+
+            <!-- 公里英里 -->
+            <div class="bg-[#fdfaf3] p-3 rounded-xl border border-[#bda387]/40">
+              <span class="text-[10px] text-stone-500 block mb-1">公路里程與限速 (Mile ⇄ KM)</span>
+              <div class="flex items-center gap-3">
+                <input type="number" id="mileVal" value="100" oninput="calcUnit('M')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
+                <span>英里 ⇄</span>
+                <input type="number" id="kmVal" value="160.9" oninput="calcUnit('K')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
+                <span>公里</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- GAS 雲端同步設定與腳本教學 Modal -->
+  <div id="gasSetupModal" class="fixed inset-0 bg-black/70 z-[10001] hidden flex items-center justify-center p-4">
+    <div class="bg-[#fbf2e3] border-4 border-[#8b5e3c] max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 relative text-[#3e2723]">
+      <button onclick="closeGasSetupModal()" class="absolute top-4 right-4 text-stone-600 hover:text-black">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
+      <h3 class="text-xl font-black flex items-center gap-2 text-amber-800 border-b border-[#8b5e3c]/30 pb-2 mb-4">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        GAS 雲端資料同步魔法部署教學
+      </h3>
+
+      <div class="space-y-4 text-xs md:text-sm font-sans text-stone-800 leading-relaxed">
+        <p class="font-bold text-amber-900">
+          透過 Google Sheets 作為永久資料庫，不僅完全免費，更不需要繁瑣的伺服器註冊！
+        </p>
+        
+        <div class="bg-amber-100/60 p-3 rounded-lg border border-amber-300">
+          <span class="font-extrabold block text-amber-950 mb-1">💡 快速 3 步建立你的雲端存檔：</span>
+          <ol class="list-decimal pl-4 space-y-1 font-bold text-amber-900">
+            <li>開啟一個全新的 <a href="https://sheets.new" target="_blank" class="underline text-blue-700">Google 試算表 (Google Sheet)</a>。</li>
+            <li>在選單點擊 <strong>「延伸模組」➔「Apps Script」</strong>。</li>
+            <li>將原本編輯器裡面的程式碼全部刪除，並貼上下方複製好的「魔法代碼」，接著點擊 <strong>「部署」➔「新增部署」➔「網頁應用程式」</strong>！</li>
+          </ol>
+        </div>
+
+        <div class="space-y-1.5">
+          <span class="font-bold block text-stone-700">部署設定（非常關鍵）：</span>
+          <ul class="list-disc pl-4 space-y-1 text-xs">
+            <li><strong>執行身分：</strong> 選擇「我 (Me)」</li>
+            <li><strong>誰有權限存取：</strong> 選擇「任何人 (Anyone)」</li>
+          </ol>
+        </div>
+
+        <!-- 複製代碼區 -->
+        <div class="relative">
+          <div class="flex justify-between items-center bg-[#2a1a15] text-amber-100 text-xs px-4 py-2 rounded-t-lg">
+            <span>Google Apps Script 原始碼 (.gs)</span>
+            <button onclick="copyGasCode()" class="bg-[#8b5e3c] hover:bg-amber-700 text-white font-bold px-2 py-1 rounded transition-all text-[10px]">
+              一鍵複製代碼
+            </button>
+          </div>
+          <pre id="gasCodeBlock" class="bg-[#1a0f0d] text-emerald-400 p-4 rounded-b-lg overflow-x-auto text-[10px] font-mono leading-relaxed max-h-48 overflow-y-auto">
+function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 1).getValues();
+  var payload = data.length > 0 && data[0][0] ? data[0][0] : "{}";
+  return ContentService.createTextOutput(payload)
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var postData = e.postData.contents;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.clear();
+  sheet.getRange(1, 1).setValue(postData);
+  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+        </div>
+
+        <p class="text-xs text-rose-800 font-bold">
+          ⚠️ 部署完成後，複製「網頁應用程式網址」，回到本網站貼在最上方的輸入欄，即刻享有一鍵雲端共享功能！
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 擬古底欄 -->
+  <footer class="bg-[#2a1a15] border-t-8 border-[#8b5e3c] py-12 text-[#e6ccb2] text-xs text-center mt-12">
+    <div class="max-w-6xl mx-auto px-4 space-y-3">
+      <p class="font-extrabold tracking-widest text-amber-200 text-sm">🏔️ 美西跨州自駕公路大冒險 🚗💨</p>
+      <p class="opacity-80 italic">「橫越加州與亞利桑那紅土荒漠，願大夥滿載黃金般珍貴的回憶而歸！」</p>
+      <p class="text-[10px] opacity-40 font-mono">© 2026 West Coast Road Trip. Designed for Chris & Steve Birthday Celebration.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ==================== 音效合成模組 (Web Audio API) ====================
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playCoinSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(987.77, now); // B5
+      osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.08); // E6
+      
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+
+    function playStampSound() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+      
+      gain.gain.setValueAtTime(0.4, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    }
+
+    function playCarHorn() {
+      initAudio();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc1.type = 'sawtooth';
+      osc1.frequency.setValueAtTime(440, now);
+      
+      osc2.type = 'sawtooth';
+      osc2.frequency.setValueAtTime(445, now);
+      
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.setValueAtTime(0.1, now + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc1.start(now);
+      osc2.start(now);
+      osc1.stop(now + 0.35);
+      osc2.stop(now + 0.35);
+    }
+
+    // ==================== 開場啟封 startGame 函數 ====================
+    function startGame() {
+      playStampSound();
+      const intro = document.getElementById('gameIntro');
+      if (intro) {
+        intro.style.opacity = '0';
+        setTimeout(() => {
+          intro.style.display = 'none';
+        }, 1000);
+      }
+      initAudio();
+    }
+
+    // ==================== 物理金幣雨引擎 ====================
+    const canvas = document.getElementById('goldCanvas');
+    const ctx = canvas.getContext('2d');
+    let coins = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    class GoldCoin {
+      constructor(x, y) {
+        this.x = x || Math.random() * canvas.width;
+        this.y = y || -50;
+        this.radius = Math.random() * 8 + 10;
+        this.vy = Math.random() * 6 + 4;
+        this.vx = Math.random() * 4 - 2;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = Math.random() * 0.1 + 0.05;
+        this.bounceCount = 0;
+        this.color = '#eab308';
+        this.scaleY = 1;
+        this.scaleSpeed = Math.random() * 0.1 + 0.05;
+      }
+
+      update() {
+        this.vy += 0.25;
+        this.y += this.vy;
+        this.x += this.vx;
+        this.rotation += this.rotationSpeed;
+        this.scaleY = Math.abs(Math.sin(this.rotation));
+
+        if (this.y + this.radius > canvas.height) {
+          this.y = canvas.height - this.radius;
+          if (this.bounceCount < 2) {
+            this.vy = -this.vy * 0.5;
+            this.vx *= 0.8;
+            this.bounceCount++;
+            playCoinSound();
+          } else {
+            this.vy = 0;
+            this.vx = 0;
+          }
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.scale(1, this.scaleY);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ca8a04';
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = '#fef08a';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ca8a04';
+        ctx.stroke();
+
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 10px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('$', 0, 0);
+
+        ctx.restore();
+      }
+    }
+
+    function generateCoins(count, x, y) {
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          coins.push(new GoldCoin(x, y));
+        }, i * 40);
+      }
+    }
+
+    function animateCoins() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      coins = coins.filter(coin => coin.y < canvas.height || coin.bounceCount < 2);
+      coins.forEach(coin => {
+        coin.update();
+        coin.draw();
+      });
+      requestAnimationFrame(animateCoins);
+    }
+    animateCoins();
+
+    // ==================== 數據與狀態中心 ====================
+    let members = ['Chris', 'Steve', 'Orinda', 'Jamilee'];
+    let expenses = []; // 零假資料起始
+
+    let foodItems = [
+      { id: 'fiveguys', name: 'Five Guys (五幫大兵)', desc: '經典花生隨便拿，漢堡配料隨心選，手切薯條超級飽！', checked: false },
+      { id: 'shakeshack', name: 'Shake Shack', desc: '源自紐約的網紅經典漢堡，波浪形脆薯與香醇奶昔必點！', checked: false },
+      { id: 'innout', name: 'In-N-Out Burger', desc: '美西大當家！熟客才懂的隱藏版「Animal Style」神級搭配！', checked: false },
+      { id: 'bluebottle', name: 'Blue Bottle Coffee', desc: '極簡藍瓶咖啡，在北加州午後享受一杯細緻現磨手沖。', checked: false },
+      { id: 'pizzeriabianco', name: 'Pizzeria Bianco', desc: '窯烤炭香手工披薩，微焦邊緣與香濃起司的完美結合！', checked: false },
+      { id: 'boudin', name: 'Boudin Bakery 酸麵包巧達湯', desc: '漁人碼頭名產，酸香微酥的巨型酸麵包裝著滾燙海鮮濃湯！', checked: false },
+      { id: 'hellskitchen', name: 'Gordon Ramsay 地獄廚房', desc: '拉斯維加斯 Strip 大道頂級朝聖！地獄招牌威靈頓牛排！', checked: false },
+      { id: 'roadbbq', name: '美式公路煙燻烤肉 BBQ', desc: '美西公路小鎮必吃！超厚手撕豬肉與手切牛胸肉。', checked: false }
     ];
 
-    function login() {
-        const id = document.getElementById('uid').value.trim() || "Guest";
-        const save = localStorage.getItem('rbx_v21_'+id);
-        if(save) {
-            user = JSON.parse(save);
-            if(!user.progress) user.progress = {};
-            if(!user.level) user.level = 1;
-            toast(Lang.t('toast_welcome') + `, ${user.id}！`);
-        } else {
-            user = { ...user, id, coins:1000, gems:20, progress:{} };
-            user.bag.push({id:'newbie', t:'i_gem', icon:'🎁'});
-            toast(Lang.t('toast_new'));
-        }
-        applyTheme();
-        updateUI();
-        Layer.sw('l-menu');
-        Menu.init();
-    }
-    
-    function logout() { save(); Layer.sw('l-login'); document.body.className=''; }
-    function save() { localStorage.setItem('rbx_v21_'+user.id, JSON.stringify(user)); updateUI(); }
-    
-    function applyTheme() {
-        document.body.className = '';
-        if(user.bag.some(i => i.id === 'skin2')) document.body.classList.add('theme-diamond');
-        else if(user.bag.some(i => i.id === 'skin1')) document.body.classList.add('theme-gold');
-    }
+    let prepItems = [
+      { id: 'passport', category: 'documents', text: '護照正本（效期需在 6 個月以上）', checked: false },
+      { id: 'esta', category: 'documents', text: 'ESTA 電子簽證許可紙本與電子存檔', checked: false },
+      { id: 'license', category: 'documents', text: '自駕神主牌：台灣駕照 + 國際駕照', checked: false },
+      { id: 'creditcard', category: 'documents', text: '高海外刷卡回饋信用卡 + 少量美鈔', checked: false },
+      { id: 'sim', category: 'tech', text: '美國行動上網 SIM 卡 / eSIM 預先開通', checked: false },
+      { id: 'adapter', category: 'tech', text: '多國轉接插頭與多孔延長線（Airbnb必備）', checked: false },
+      { id: 'powerbank', category: 'tech', text: '行動電源（登機隨身，不可放託運行李）', checked: false },
+      { id: 'liquid', category: 'luggage', text: '隨身登機液體：每瓶限 100ml 內且需裝入透明袋', checked: false },
+      { id: 'jacket', category: 'clothing', text: '防風防風保暖外套（大峽谷與舊金山夜間溫差極大）', checked: false },
+      { id: 'sunglasses', category: 'clothing', text: '太陽眼鏡與防曬乳（約書亞樹及羚羊谷陽光強烈）', checked: false },
+    ];
 
-    function updateUI() {
-        document.getElementById('m-name').innerText = user.id;
-        document.getElementById('m-lvl').innerText = user.level;
-        document.getElementById('m-coin').innerText = user.coins;
-        document.getElementById('m-gem').innerText = user.gems;
-    }
-    
-    function hasItem(id) { return user.bag.some(i => i.id === id); }
-    
-    function addExp(amount) {
-        user.exp += amount;
-        let req = user.level * 1000;
-        if(user.exp >= req) {
-            user.exp -= req; user.level++;
-            user.coins += 500; // Level up reward
-            toast(`Level Up! Lv.${user.level} (+500 Coins)`);
-            updateUI();
-        } else {
-            toast(`+${amount} EXP`);
-        }
+    // 14天詳細日程
+    const itinerary = [
+      { day: 1, date: '05/23 (六)', title: '啟航 ✈️ 台北 － 洛杉磯', state: '加州 California', location: '台北桃園 (TPE) ➔ 洛杉磯 (LAX)', desc: '懷著興奮無比的心情集合於桃園機場，衝上高空、跨越萬里換日線！降落後辦理入境租車，開啟自駕美西荒野夢幻之旅！', highlights: ['穿梭太平洋時光換日線', '取越野車展開美西首航', '入住溫馨 LA 營地調整時差'], tips: '飛機上多喝水並盡量配合美西時間睡眠，以減緩落地時差。', color: 'bg-[#8d5b4c]' },
+      { day: 2, date: '05/24 (日)', title: '天使之城補給日 🛍️', state: '加州 California', location: '洛杉磯市區與大超市', desc: '今天放慢腳步，駕車造訪著名的 Hollywood 地標與市區，並前往 Target 採買未來幾天自駕所需的飲用水、零食、水。晚餐大口吞下傳說中的 In-N-Out！', highlights: ['美式大超市採購補給', '好萊塢星光大道漫遊', '初嚐美西霸主 In-N-Out 漢堡'], tips: '美西公路慢長乾燥，車尾箱務必囤放一兩箱礦泉水。', color: 'bg-[#8d5b4c]' },
+      { day: 3, date: '05/25 (一)', title: '約書亞樹國家公園 🌵 Chris 生日快樂！🎂', state: '加州 California', location: '洛杉磯 ➔ 約書亞樹國家公園 (Joshua Tree)', desc: '驅車前往約書亞樹國家公園，觀賞矗立在奇岩怪石中的約書亞樹。夜間入住超有荒野野奢風格的 Airbnb，大家一同下廚大展身手，替 Chris 慶生！', birthday: '🎂 Chris 生日大驚喜！', highlights: ['約書亞樹奇景與絕美黃昏', '在沙漠豪華別墅親自下廚', '荒原寂靜無光污染觀星'], tips: '沙漠地帶日照極強且乾燥，防曬乳、遮陽帽 and 保濕極度重要。', color: 'bg-[#b45309]' },
+      { day: 4, date: '05/26 (二)', title: '不夜金沙城 🎲 拉斯維加斯', state: '內華達 Nevada', location: '約書亞樹 ➔ 拉斯維加斯 (Las Vegas)', desc: '睡到自然醒，隨後駕車穿越莫哈維沙漠公路，前進極度奢華的沙漠霓虹世界。抵達賭城後在 Strip 大道漫遊，享受視覺感官的極大震撼！', highlights: ['穿越廣袤的荒漠公路自駕', '賭城不夜城奢華飯店巡禮', '百樂宮大型水舞音樂噴泉'], tips: '賭城內部酒店冷氣非常強大，記得攜帶薄外套，免於冷熱交替感冒。', color: 'bg-[#b91c1c]' },
+      { day: 5, date: '05/27 (三)', title: '地獄廚房饗宴 🍴 賭城彈性探索', state: '內華達 Nevada', location: '拉斯維加斯市區', desc: '早上完全彈性休息。下午 15:00 準時進入 Gordon Ramsay 的 Hell\'s Kitchen，品嚐傳奇的威靈頓牛排！晚上大家可自費欣賞精彩絕倫的太陽馬戲團大秀。', highlights: ['朝聖地獄廚房奢華午晚餐', '賭城暢貨中心 Outlet 大瘋購', '極致炫目豪奢賭城夜景'], tips: '地獄廚房服裝雖無嚴苛規定，但建議 Smart Casual，拍照更有儀式感！', color: 'bg-[#b91c1c]' },
+      { day: 6, date: '05/28 (四)', title: '磅礴世界奇景 🌲 Steve 生日快樂！🎂', state: '亞利桑那 Arizona', location: '拉斯維加斯 ➔ 大峽谷 ➔ 佩吉市', desc: '清晨出發前往大峽谷國家公園南口，踏上世界七大奇景的邊緣！遊覽 Mather Point 與 Desert View 古塔，並於傍晚時分驅車至佩吉市營地，一同替 Steve 熱烈慶生！', birthday: '🎂 Steve 生日大狂歡！', highlights: ['萬丈深淵大峽谷震撼眺望', 'Desert View 古塔金黃日落', '佩吉市星空 Airbnb 生日大趴'], tips: '大峽谷海拔約 2200 公尺，起風或夕陽西下後極其寒冷，務必穿足保暖衣物！', color: 'bg-[#a16207]' },
+      { day: 7, date: '05/29 (五)', title: '大自然光雕魔法 ✨ 羚羊谷與馬蹄灣', state: '亞利桑那 Arizona', location: '佩吉市 (Antelope & Horseshoe)', desc: '今天睡飽出發！中午參與羚羊谷印地安導覽，捕捉上帝撒在波浪岩壁上的天使光芒。傍晚在馬蹄灣懸崖邊緣，眺望科羅拉多河 360 度大拐彎夕陽。', highlights: ['羚羊谷不可思議的波浪光影', '馬蹄灣 300 米深淵壯麗日落', '美式公路小鎮牛排館聚餐'], tips: '羚羊谷內嚴禁攜帶自拍棒及背包，僅能帶相機、手機與水，請務必配合。', color: 'bg-[#a16207]' },
+      { day: 8, date: '05/30 (六)', title: '再見荒野 ✈️ 飛向舊金山海灣', state: '加州 California', location: '佩吉市 ➔ 拉斯維加斯還車 ➔ 舊金山 (SFO)', desc: '一早駛離佩吉，返回拉斯維加斯機場還車。搭乘國內線飛抵優雅的海灣城市舊金山！重新租車後開過長長的跨海大橋，入住奧克蘭藝術氛圍旅宿。', highlights: ['再看一眼驚艷的內華達荒漠', '搭國內航班鳥瞰美西山脈', '跨越海灣入住東灣藝術別墅'], tips: '美國國內線班機托運行李通常需當場收費，請事先將行李重量進行優化。', color: 'bg-[#155e75]' },
+      { day: 9, date: '05/31 (日)', title: '碼頭慵懶海獅 🌊 惡魔島監獄之夜', state: '加州 California', location: '漁人碼頭 & 惡魔島 & 金門大橋', desc: '上午在 Pier 39 碼頭看成群的海獅，午餐享用 Boudin Bakery 熱騰騰的酸麵包巧達濃湯。下午搭船踏上神祕的惡魔島監獄探秘。黃昏至金門大橋合影！', highlights: ['39號碼頭肥胖海獅曬太陽', '惡魔島(Alcatraz)聯盤監獄探秘', '金門大橋最經典的黃昏角度'], tips: '舊金山港口海風猛烈，氣溫宛如冬季，請務必攜帶防風禦寒厚外套。', color: 'bg-[#155e75]' },
+      { day: 10, date: '06/01 (一)', title: '傾斜斜坡九曲花街 🚃 復古叮叮車之旅', state: '加州 California', location: '舊金山市區', desc: '挑戰舊金山世界著名的極限大斜坡！徒步走下花團錦簇的九曲花街，隨後掛在叮叮車外側穿梭市區。下午在聯合廣場盡情購物，隨後在文青聖地藍瓶咖啡小憩。', highlights: ['九曲花街 Lombard 的考驗', '像拍電影般掛在車旁搭叮叮車', '藍瓶咖啡創始地細細品嚐風味'], tips: '叮叮車排隊人潮極多，建議提早於手機 App 購買乘車券。', color: 'bg-[#3730a3]' },
+      { day: 11, date: '06/02 (二)', title: '文創藝術奧克蘭 🎓 柏克萊名校洗禮', state: '加州 California', location: '奧克蘭 ➔ 柏克萊大學 (UC Berkeley)', desc: '上午探訪奧克蘭港區藝術市集，中午前往世界頂尖學府柏克萊大學校園，參觀壯麗的薩瑟塔，沉浸在濃濃的學院與學術氛圍中。', highlights: ['東灣奧克蘭港文創海邊漫步', '柏克萊大學名校薩瑟塔鐘樓', '品嚐在地美式早午餐排隊名店'], tips: '校園極度寬廣，建議穿著最舒適好走的運動鞋前來。', color: 'bg-[#3730a3]' },
+      { day: 12, date: '06/03 (三)', title: '瘋狂大採購伴手禮 💔 踏上歸途', state: '歸途航線', location: '舊金山市區 ➔ SFO機場 ➔ 台北', desc: '最後一整天，大家實地採買伴手禮。晚上 22:00 前抵達 SFO 機場辦理退稅與 Check-In，告別這趟奇幻冒險。', highlights: ['美式巧克力與特色周邊瘋狂採買', '舊金山機場免稅店最後補貨', '14天公路夥伴依依不捨互道珍重'], tips: '國際航線安檢與行李托運較嚴，請務必提前 3 小時抵達機場。', color: 'bg-[#475569]' },
+      { day: 13, date: '06/04 (四)', title: '跨越萬里雲端 ✈️ 時空穿梭中', state: '雲端飛行', location: '太平洋萬米高空', desc: '凌晨 00:50 飛機準時滑行升空！在機艙內放鬆享受熱食與精彩影音，再次飛越萬里太平洋與國際換日線，將滿箱的紀念品與滿懷的回憶一併打包！', highlights: ['長途飛機影音不間斷連看', '與同伴交換互傳 14天拍照大圖', '在雲端調整作息準備降落'], tips: '長途客艙極為乾燥，請隨身攜帶保濕乳液與眼藥水。', color: 'bg-[#475569]' },
+      { day: 14, date: '06/05 (五)', title: '平安降落桃園 🏡 完美的終點', state: '台灣 Taipei', location: '桃園國際機場 (TPE)', desc: '清晨 05:25 順利降落台北桃園機場！完美的跨州自駕公路旅程正式畫下最震撼、最開心的句點。大夥兒相約下一次的大冒險！', highlights: ['05:25 抵達溫馨的家', '向家人分享大峽谷與羚羊谷奇景', '約好下個週末吃熱炒店分帳聚會！'], tips: '平安回家後洗個熱水澡，好好睡個覺，開啟照片分享囉！', color: 'bg-[#065f46]' }
+    ];
+
+    // ==================== 1. GAS 雲端儲存相關控制函數 ====================
+    function openGasSetupModal() {
+      const modal = document.getElementById('gasSetupModal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
     }
 
-    function buy(idx) {
-        const it = items[idx];
-        if(['spd','hp','skin','passive'].includes(it.type) && hasItem(it.id)) return toast(Lang.t('shop_owned'), true);
-        
-        if(user.coins >= it.price) {
-            user.coins -= it.price;
-            
-            if(it.type === 'gacha') {
-                let amt = Math.floor(Math.random()*90)+10;
-                user.gems += amt;
-                Layer.modal("Gacha", `💎 +${amt}`, `<button class="btn btn-blue" onclick="Layer.closeModal()">OK</button>`);
-            } else if(it.type === 'use') {
-                if(it.id === 'potion_exp') addExp(it.val);
-            } else if(it.type === 'key' || it.type === 'item') {
-                 user.bag.push(it);
-                 toast(`${Lang.t('toast_bought')}: ${Lang.t(it.t)}`);
-            } else {
-                user.bag.push(it);
-                if(it.type==='spd') user.stats.spd += it.val;
-                if(it.type==='hp') user.stats.hp += it.val;
-                if(it.type==='skin') { applyTheme(); toast("Theme Applied!"); }
-                toast(Lang.t('toast_bought'));
-            }
-            save();
-            Menu.renderShop(); Menu.renderBag();
-        } else {
-            toast(Lang.t('toast_no_money'), true);
-        }
+    function closeGasSetupModal() {
+      const modal = document.getElementById('gasSetupModal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
     }
 
-    function toast(msg, err=false) {
-        const t = document.getElementById('toast');
-        t.innerText = msg; t.className = err ? 'toast-err' : '';
-        t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000);
+    function copyGasCode() {
+      const code = document.getElementById('gasCodeBlock').textContent;
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        alert("🧙‍♂️ 魔法代碼已複製到您的剪貼簿！請直接貼到 Google Apps Script 編輯器中。");
+      } catch (err) {
+        alert("複製失敗，請手動框選複製！");
+      }
+      document.body.removeChild(textarea);
     }
 
-    return { login, logout, save, get user(){return user}, get items(){return items}, buy, updateUI, toast, hasItem, addExp };
-})();
+    function saveToGasCloud() {
+      const gasUrl = document.getElementById('gasUrlInput').value.trim();
+      if (!gasUrl) {
+        alert("⚠️ 請先在輸入框中貼上您的 GAS Web App 部署網址！");
+        openGasSetupModal();
+        return;
+      }
 
-/* --- 2. LAYER & INPUT --- */
-const Layer = {
-    sw: (id) => {
-        document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        if(id === 'l-menu') Render.resize();
-    },
-    modal: (t, b, html) => {
-        document.getElementById('mo-title').innerHTML = t;
-        document.getElementById('mo-body').innerHTML = b;
-        document.getElementById('mo-foot').innerHTML = html;
-        document.getElementById('l-modal').classList.add('active');
-    },
-    closeModal: () => document.getElementById('l-modal').classList.remove('active')
-};
+      localStorage.setItem('gas_web_app_url', gasUrl);
 
-const Input = { u:0, d:0, l:0, r:0, a:0, b:0 };
-const setK = (k,v) => {
-    if(k==='ArrowUp'||k==='KeyW') Input.u=v; if(k==='ArrowDown'||k==='KeyS') Input.d=v;
-    if(k==='ArrowLeft'||k==='KeyA') Input.l=v; if(k==='ArrowRight'||k==='KeyD') Input.r=v;
-    if(k==='KeyZ'||k==='Space') Input.a=v; if(k==='KeyX'||k==='ShiftLeft') Input.b=v;
-    if(k==='KeyD') Input.l=v; if(k==='KeyF') Input.d=v; if(k==='KeyJ') Input.u=v; if(k==='KeyK') Input.r=v;
-};
-window.onkeydown = e => { setK(e.code,1); if(e.code==='Escape') Eng.pause(); };
-window.onkeyup = e => setK(e.code,0);
-document.querySelectorAll('.c-btn').forEach(b => {
-    const k = b.dataset.k;
-    const press = (e) => { e.preventDefault(); b.classList.add('press'); setK(k, 1); };
-    const release = (e) => { e.preventDefault(); b.classList.remove('press'); setK(k, 0); };
-    b.addEventListener('mousedown', press); b.addEventListener('touchstart', press, {passive:false});
-    b.addEventListener('mouseup', release); b.addEventListener('touchend', release); b.addEventListener('mouseleave', release);
-});
+      const payload = {
+        expenses,
+        members,
+        foodItems,
+        prepItems
+      };
 
-/* --- 3. RENDER --- */
-const Render = (function() {
-    const cvs = document.getElementById('cvs');
-    const ctx = cvs.getContext('2d');
-    let W, H;
-    function resize() { W = cvs.parentElement.clientWidth; H = cvs.parentElement.clientHeight; cvs.width=W; cvs.height=H; }
-    window.onresize = resize;
+      const btn = document.getElementById('btnUploadCloud');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 上傳中...`;
+      lucide.createIcons();
 
-    const Draw = {
-        clear: (c) => { 
-            if(!c) c = '#1a1a1d';
-            if(document.body.classList.contains('theme-gold')) c = '#332200';
-            if(document.body.classList.contains('theme-diamond')) c = '#001a33';
-            let g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0, c); g.addColorStop(1, '#000');
-            ctx.fillStyle=g; ctx.fillRect(0,0,W,H); 
+      fetch(gasUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json'
         },
-        rect: (x,y,w,h,c) => { ctx.fillStyle=c; ctx.fillRect(x,y,w,h); },
-        box: (x,y,w,h,c,d=5) => {
-            ctx.fillStyle = shade(c, -40); ctx.beginPath(); ctx.moveTo(x+w,y); ctx.lineTo(x+w+d,y-d); ctx.lineTo(x+w+d,y+h-d); ctx.lineTo(x+w,y+h); ctx.fill();
-            ctx.fillStyle = shade(c, 40); ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+d,y-d); ctx.lineTo(x+w+d,y-d); ctx.lineTo(x+w,y); ctx.fill();
-            ctx.fillStyle = c; ctx.fillRect(x,y,w,h);
-        },
-        circle: (x,y,r,c) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); },
-        text: (t,x,y,s=30,c='#fff') => { ctx.fillStyle=c; ctx.font=`bold ${s}px Fredoka`; ctx.textAlign='center'; ctx.fillText(t,x,y); },
-        player: (x,y,c,s=1) => {
-            if(Sys.user.bag.some(i=>i.id==='skin2')) c='#00d2ff'; else if(Sys.user.bag.some(i=>i.id==='skin1')) c='#fcc419';
-            Draw.box(x-10*s,y-10*s,20*s,20*s,c,5*s); ctx.fillStyle='white'; ctx.fillRect(x-5*s,y-5*s,4*s,4*s); ctx.fillRect(x+3*s,y-5*s,4*s,4*s);
-        },
-        pattern: (type) => {
-            if(type==='grass') { ctx.fillStyle='rgba(0,255,0,0.05)'; for(let i=0;i<W;i+=40)for(let j=0;j<H;j+=40) if((i+j)%80==0) ctx.fillRect(i,j,40,40); }
-            if(type==='road') { ctx.fillStyle='#444'; ctx.fillRect(W/2-100,0,200,H); ctx.fillStyle='#fff'; for(let i=0;i<H;i+=60) ctx.fillRect(W/2-5,i,10,40); }
-            if(type==='grid') { ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.beginPath(); for(let i=0;i<W;i+=40){ctx.moveTo(i,0);ctx.lineTo(i,H);} for(let i=0;i<H;i+=40){ctx.moveTo(0,i);ctx.lineTo(W,i);} ctx.stroke(); }
-        }
-    };
-    function shade(col, amt) {
-        try{
-            let usePound = false; if (col[0] == "#") { col = col.slice(1); usePound = true; }
-            let num = parseInt(col,16);
-            let r = (num >> 16) + amt; if (r > 255) r = 255; else if (r < 0) r = 0;
-            let g = ((num >> 8) & 0x00FF) + amt; if (g > 255) g = 255; else if (g < 0) g = 0;
-            let b = (num & 0x0000FF) + amt; if (b > 255) b = 255; else if (b < 0) b = 0;
-            const hex = (r<<16 | g<<8 | b).toString(16).padStart(6,'0');
-            return (usePound?"#":"") + hex;
-        }catch(e){return col}
-    }
-    return { resize, Draw, get w(){return W}, get h(){return H} };
-})();
-
-/* --- 4. GAME LOGIC --- */
-class GBase { 
-    constructor(cfg, lv) { 
-        this.cfg = cfg || {}; this.lv = lv || 1; this.score = 0; this.t = 0;
-        this.hp = 100 + Sys.user.stats.hp; 
-        this.spd = Sys.user.stats.spd;
-        this.hasMagnet = Sys.hasItem('magnet');
-    }
-    win() { Eng.over(1); } fail() { Eng.over(0); }
-}
-
-class GMaze extends GBase {
-    start() { this.p={x:50,y:50}; this.goal={x:Render.w-50,y:Render.h-50}; this.ws=this.genMaze(15+this.lv*3); this.es=[]; let eCount=Math.floor(this.lv/2)+1; for(let i=0;i<eCount;i++) this.es.push({x:Math.random()*Render.w, y:Math.random()*Render.h, vx:1+this.lv*0.1, vy:1+this.lv*0.1}); }
-    genMaze(count) { let w=[]; w.push({x:0,y:0,w:Render.w,h:20},{x:0,y:Render.h-20,w:Render.w,h:20},{x:0,y:0,w:20,h:Render.h},{x:Render.w-20,y:0,w:20,h:Render.h}); for(let i=0;i<count;i++) { let x=Math.random()*Render.w, y=Math.random()*Render.h; if(Math.hypot(x-50,y-50)<150) continue; w.push({x, y, w:Math.random()>0.5?100:20, h:Math.random()>0.5?20:100}); } return w; }
-    upd() { let s=4+this.spd*0.5; if(Input.u)this.p.y-=s; if(Input.d)this.p.y+=s; if(Input.l)this.p.x-=s; if(Input.r)this.p.x+=s; if(!this.ws.some(w=>this.p.x>w.x-10 && this.p.x<w.x+w.w+10 && this.p.y>w.y-10 && this.p.y<w.y+w.h+10)) {this.lx=this.p.x;this.ly=this.p.y;} else {this.p.x=this.lx;this.p.y=this.ly;} this.es.forEach(e=>{e.x+=e.vx; e.y+=e.vy; if(e.x<0||e.x>Render.w)e.vx*=-1; if(e.y<0||e.y>Render.h)e.vy*=-1; if(Math.hypot(this.p.x-e.x, this.p.y-e.y)<25){this.hp-=10;if(this.hp<=0)this.fail();}}); if(Math.hypot(this.p.x-this.goal.x, this.p.y-this.goal.y)<30)this.win(); }
-    drw() { Render.Draw.clear(this.cfg.bg); Render.Draw.pattern('grid'); Render.Draw.text("EXIT",this.goal.x,this.goal.y-30); Render.Draw.box(this.goal.x-15,this.goal.y-15,30,30,'#51cf66'); this.ws.forEach(w=>Render.Draw.box(w.x,w.y,w.w,w.h,'#868e96')); this.es.forEach(e=>Render.Draw.box(e.x-10,e.y-10,20,20,'#ff6b6b')); Render.Draw.player(this.p.x,this.p.y,'#4dabf7'); }
-}
-class GSnake extends GBase { 
-    start() { this.sz=20; this.sn=[{x:10,y:10}]; this.d={x:1,y:0}; this.fd={x:15,y:15}; this.tick=Math.max(3, 12-this.lv*0.5); } 
-    upd() { 
-        if(Input.u&&this.d.y===0)this.d={x:0,y:-1}; if(Input.d&&this.d.y===0)this.d={x:0,y:1}; if(Input.l&&this.d.x===0)this.d={x:-1,y:0}; if(Input.r&&this.d.x===0)this.d={x:1,y:0}; 
-        if(this.t++%Math.floor(this.tick)===0) { 
-            let h={x:this.sn[0].x+this.d.x, y:this.sn[0].y+this.d.y}; 
-            if(h.x<0||h.x>Render.w/this.sz||h.y<0||h.y>Render.h/this.sz||this.sn.some(s=>s.x===h.x&&s.y===h.y)) return this.fail(); 
-            this.sn.unshift(h); 
-            // Magnet Effect
-            let dist = this.hasMagnet ? 2 : 0;
-            if(Math.abs(h.x-this.fd.x)<=dist && Math.abs(h.y-this.fd.y)<=dist) { 
-                this.score+=10; this.fd={x:Math.floor(Math.random()*(Render.w/this.sz)), y:Math.floor(Math.random()*(Render.h/this.sz))}; 
-            } else this.sn.pop(); 
-            if(this.score>=50+this.lv*20) this.win(); 
-        } 
-    } 
-    drw() { Render.Draw.clear('#222'); Render.Draw.pattern('grass'); Render.Draw.box(this.fd.x*this.sz, this.fd.y*this.sz, this.sz, this.sz, '#ff6b6b'); this.sn.forEach(s=>Render.Draw.box(s.x*this.sz, s.y*this.sz, this.sz, this.sz, '#51cf66')); } 
-}
-class GBreak extends GBase { start() { this.pad={x:Render.w/2}; this.b={x:Render.w/2, y:Render.h/2, vx:4+this.lv*0.2, vy:4+this.lv*0.2}; this.bls=[]; for(let i=0;i<8+this.lv;i++) this.bls.push({x:(i%6)*90+50, y:Math.floor(i/6)*30+50, a:1}); } upd() { if(Input.l)this.pad.x-=8; if(Input.r)this.pad.x+=8; this.b.x+=this.b.vx; this.b.y+=this.b.vy; if(this.b.x<0||this.b.x>Render.w)this.b.vx*=-1; if(this.b.y<0)this.b.vy*=-1; if(this.b.y>Render.h-30 && Math.abs(this.b.x-this.pad.x)<60) this.b.vy*=-1; if(this.b.y>Render.h) this.fail(); this.bls.forEach(k=>{if(k.a && this.b.x>k.x && this.b.x<k.x+80 && this.b.y>k.y && this.b.y<k.y+20){k.a=0; this.b.vy*=-1; this.score+=10;}}); if(this.bls.every(k=>!k.a)) this.win(); } drw() { Render.Draw.clear('#222'); Render.Draw.box(this.pad.x-50, Render.h-20, 100, 15, '#4dabf7'); Render.Draw.circle(this.b.x, this.b.y, 8, '#fff'); this.bls.forEach(k=>{if(k.a) Render.Draw.box(k.x, k.y, 80, 20, '#ff6b6b');}); } }
-class GRace extends GBase { start() { this.px=Render.w/2; this.obs=[]; this.speed=6+this.lv*0.5; } upd() { if(Input.l)this.px-=6; if(Input.r)this.px+=6; if(this.t++%(Math.max(10,30-this.lv))===0) this.obs.push({x:Math.random()*(200)+Render.w/2-100, y:0, w:Math.random()*50+30}); this.obs.forEach(o=>{o.y+=this.speed; o.w+=1; o.x-=0.5; if(Math.abs(this.px-o.x)<o.w && Math.abs(Render.h-80-o.y)<20) this.fail(); }); this.score=this.t; if(this.score>500+this.lv*100) this.win(); } drw() { Render.Draw.clear('#338'); Render.Draw.pattern('road'); Render.Draw.box(this.px-20, Render.h-80, 40, 20, '#fcc419'); this.obs.forEach(o=>Render.Draw.box(o.x, o.y, o.w, 20, '#ff6b6b')); } }
-class GPong extends GBase { start() { this.bx=Render.w/2; this.by=50; this.vx=4+this.lv*0.2; this.vy=4+this.lv*0.2; this.px=Render.w/2; } upd() { if(Input.l)this.px-=8; if(Input.r)this.px+=8; this.bx+=this.vx; this.by+=this.vy; if(this.bx<0||this.bx>Render.w)this.vx*=-1; if(this.by<0)this.vy*=-1; if(this.by>Render.h-40 && Math.abs(this.bx-this.px)<50) { this.vy*=-1; this.score++; } if(this.by>Render.h) this.fail(); if(this.score>=5+this.lv) this.win(); } drw() { Render.Draw.clear('#225522'); Render.Draw.rect(0, Render.h/2-2, Render.w, 4, '#fff'); Render.Draw.box(this.px-50, Render.h-30, 100, 10, '#fff'); Render.Draw.circle(this.bx, this.by, 10, '#fcc419'); } }
-class GDrop extends GBase { start() { this.blks=[]; this.cur={x:0, w:100}; this.dir=3+this.lv*0.5; } upd() { this.cur.x+=this.dir; if(this.cur.x>Render.w-100||this.cur.x<0)this.dir*=-1; if(Input.a) { Input.a=0; this.blks.push({x:this.cur.x, y:Render.h-this.blks.length*30-30, w:100}); this.score++; if(this.score>=5+this.lv) this.win(); } } drw() { Render.Draw.clear('#222'); Render.Draw.box(this.cur.x, 50, 100, 30, '#fff'); this.blks.forEach(b=>Render.Draw.box(b.x, b.y, b.w, 30, '#51cf66')); } }
-class GSpace extends GBase { start(){this.p={x:Render.w/2,y:Render.h-50};this.es=[];this.bs=[];} upd(){if(Input.l)this.p.x-=5;if(Input.r)this.p.x+=5;if(Input.a&&this.t%10==0)this.bs.push({x:this.p.x,y:this.p.y});if(this.t++%(50-this.lv)==0)this.es.push({x:Math.random()*Render.w,y:0});this.bs.forEach(b=>b.y-=10);this.es.forEach(e=>e.y+=3);this.bs=this.bs.filter(b=>{let h=this.es.findIndex(e=>Math.hypot(e.x-b.x,e.y-b.y)<30);if(h>-1){this.es.splice(h,1);this.score+=10;return 0}return b.y>0});if(this.es.some(e=>e.y>Render.h))this.fail();if(this.score>100+this.lv*20)this.win();} drw(){Render.Draw.clear('#000');Render.Draw.player(this.p.x,this.p.y,'#aaa');this.es.forEach(e=>Render.Draw.box(e.x,e.y,30,30,'#f00'));this.bs.forEach(b=>Render.Draw.box(b.x,b.y,5,10,'#ff0'));} }
-class GRhy extends GBase { 
-    start(){this.nts=[];this.lns=[Render.w*0.2,Render.w*0.4,Render.w*0.6,Render.w*0.8];} 
-    upd(){
-        if(this.t++%Math.max(20,50-this.lv)==0)this.nts.push({l:Math.floor(Math.random()*4),y:0});
-        this.nts.forEach(n=>n.y+=5);
-        // Magnet Effect
-        let tol = this.hasMagnet ? 80 : 60;
-        if(Input.l&&this.chk(0,tol))this.score+=10;if(Input.d&&this.chk(1,tol))this.score+=10;
-        if(Input.u&&this.chk(2,tol))this.score+=10;if(Input.r&&this.chk(3,tol))this.score+=10;
-        if(this.score>100+this.lv*20)this.win();
-    } 
-    chk(l, tol){let i=this.nts.findIndex(n=>n.l==l&&Math.abs(n.y-(Render.h-60))<tol);if(i>-1){this.nts.splice(i,1);return 1}return 0} 
-    drw(){Render.Draw.clear('#111');this.lns.forEach(x=>Render.Draw.box(x-30,Render.h-60,60,10,'#555'));this.nts.forEach(n=>Render.Draw.box(this.lns[n.l]-25,n.y,50,20,'#0ff'));} 
-}
-class GDodge extends GBase { start(){this.p={x:Render.w/2,y:Render.h/2};this.obs=[];} upd(){if(Input.u)this.p.y-=5;if(Input.d)this.p.y+=5;if(Input.l)this.p.x-=5;if(Input.r)this.p.x+=5;if(this.t++%(15-this.lv*0.5)==0)this.obs.push({x:Math.random()*Render.w,y:0});this.obs.forEach(o=>{o.y+=5;if(Math.hypot(this.p.x-o.x,this.p.y-o.y)<20)this.fail()});this.score=this.t;if(this.score>300+this.lv*50)this.win();} drw(){Render.Draw.clear('#222');Render.Draw.player(this.p.x,this.p.y,'#fff');this.obs.forEach(o=>Render.Draw.circle(o.x,o.y,10,'#f00'));} }
-class GClick extends GBase { start(){this.req=20+this.lv*5;this.ores=[];} upd(){if(Input.a){Input.a=0;this.score++;this.ores.push({x:Math.random()*Render.w,y:Math.random()*Render.h,t:20});}if(this.score>=this.req)this.win();} drw(){Render.Draw.clear('#333');Render.Draw.text(`按 A (${this.score}/${this.req})`,Render.w/2,Render.h/2);this.ores.forEach(o=>{if(o.t-->0)Render.Draw.text("💎",o.x,o.y)})} }
-class GJumper extends GBase { start(){this.p={x:Render.w/2,y:Render.h-100,vy:0};this.pls=[{x:Render.w/2,y:Render.h-50}];} upd(){if(Input.l)this.p.x-=5;if(Input.r)this.p.x+=5;this.p.y+=this.p.vy;this.p.vy+=0.5;if(this.t++%(40-this.lv)==0)this.pls.push({x:Math.random()*Render.w,y:0});this.pls.forEach(p=>{p.y+=2;if(this.p.vy>0&&Math.abs(this.p.x-p.x)<40&&Math.abs(this.p.y-p.y)<15)this.p.vy=-10});if(this.p.y>Render.h)this.fail();this.score=Math.floor(this.t/10);if(this.score>80+this.lv*20)this.win();} drw(){Render.Draw.clear('#87CEEB');Render.Draw.player(this.p.x,this.p.y,'#00f');this.pls.forEach(p=>Render.Draw.box(p.x-20,p.y,40,10,'#0f0'));} }
-class GMem extends GBase { start(){this.seq=[];this.pl=[];this.mode=0;this.add();} add(){this.seq.push(Math.floor(Math.random()*4));this.mode=0;this.tm=0;} upd(){if(this.mode==0){if(this.t++%(60-this.lv)==0){this.tm++;if(this.tm>this.seq.length)this.mode=1}}else{let k=-1;if(Input.u)k=0;if(Input.d)k=1;if(Input.l)k=2;if(Input.r)k=3;if(k!=-1){Input.u=Input.d=Input.l=Input.r=0;if(k==this.seq[this.pl.length]){this.pl.push(k);if(this.pl.length==this.seq.length){this.pl=[];this.score++;this.add();this.t=0}}else this.fail()}}if(this.score>=3+this.lv)this.win();} drw(){Render.Draw.clear('#222');let a=this.mode==0&&this.tm<this.seq.length?this.seq[this.tm]:null;Render.Draw.box(Render.w/2-40,100,80,80,a==0?'#fff':'#444');Render.Draw.box(Render.w/2-40,300,80,80,a==1?'#fff':'#444');Render.Draw.box(Render.w/2-140,200,80,80,a==2?'#fff':'#444');Render.Draw.box(Render.w/2+60,200,80,80,a==3?'#fff':'#444');} }
-
-const Games = [
-    {t:'g_maze', c:GMaze, i:"🗺️", bg:'#2c3e50', h:"WASD / Arrow Keys"}, 
-    {t:'g_space', c:GSpace, i:"🚀", bg:'#000', h:"Left/Right + A"},
-    {t:'g_snake', c:GSnake, i:"🐍", bg:'#254', h:"Arrow Keys"},
-    {t:'g_rhythm', c:GRhy, i:"🎵", bg:'#111', h:"D F J K"},
-    {t:'g_dodge', c:GDodge, i:"💢", bg:'#333', h:"Arrow Keys"},
-    {t:'g_click', c:GClick, i:"⛏️", bg:'#443', h:"Spam A"},
-    {t:'g_jump', c:GJumper, i:"🦘", bg:'#87CEEB', h:"Left/Right"},
-    {t:'g_break', c:GBreak, i:"🧱", bg:'#222', h:"Left/Right"},
-    {t:'g_mem', c:GMem, i:"🧠", bg:'#222', h:"Memorize & Repeat"},
-    {t:'g_race', c:GRace, i:"🏎️", bg:'#555', h:"Left/Right"},
-    {t:'g_horror', c:GPong, i:"🏓", bg:'#222', h:"Left/Right"}, 
-    {t:'g_puzzle', c:GDrop, i:"🏗️", bg:'#333', h:"A to Drop"}
-];
-
-/* --- 5. ENGINE & LOOP (fixed to prevent overlapping loops) --- */
-const Eng = (function() {
-    let act=null, loopId=null, paused=false, gIdx=0;
-
-    function stopLoop() {
-        if(loopId) { cancelAnimationFrame(loopId); loopId = null; }
+        body: JSON.stringify(payload)
+      })
+      .then(() => {
+        generateCoins(15);
+        alert("📜 羊皮帳卷已成功同步上載至您的 Google Sheets 雲端法陣！");
+      })
+      .catch(err => {
+        alert("💥 傳送失敗，請確認部署 URL 是否正確且權限已開至 Anyone！");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+      });
     }
 
-    function start(idx, level=1) {
-        gIdx = idx;
-        const g = Games[idx];
-        const name = Lang.t(g.t);
-        const controls = g.c === GRhy ? "<span class='key-hint'>D</span><span class='key-hint'>F</span><span class='key-hint'>J</span><span class='key-hint'>K</span>" : 
-                         g.c === GClick ? "<span class='key-hint'>A (Space)</span>" : 
-                         "<span class='key-hint'>↑↓←→</span> <span class='key-hint'>A</span>";
-        
-        let savedLv = (Sys.user.progress && Sys.user.progress[idx]) ? Sys.user.progress[idx] : 0;
-        let startLv = level > 1 ? level : (savedLv > 0 ? savedLv + 1 : 1);
-        
-        Layer.modal(name, 
-            `${Lang.t('hud_level')} ${startLv}<br>
-             <p style="color:#aaa; font-size:14px; margin:10px 0;">${g.h}</p>
-             <div>${controls}</div>`, 
-            `<button class="btn btn-blue" onclick="Eng.realStart(${idx}, ${startLv})">${Lang.t('btn_continue')}</button>
-             ${savedLv > 0 && startLv > 1 ? `<button class="btn btn-red" onclick="Eng.realStart(${idx}, 1)">${Lang.t('btn_retry')}</button>` : ''}`
-        );
-    }
+    function loadFromGasCloud() {
+      const gasUrl = document.getElementById('gasUrlInput').value.trim();
+      if (!gasUrl) {
+        alert("⚠️ 請先在輸入框中貼上您的 GAS Web App 部署網址！");
+        openGasSetupModal();
+        return;
+      }
 
-    function realStart(idx, level) {
-        Layer.closeModal();
-        stopLoop();
-        
-        const g = Games[idx];
-        act = new g.c(g.cfg || {}, level);
-        act.start(); paused=false; 
-        document.getElementById('ctrl-std').style.display = (g.c === GRhy || g.c === GMem) ? 'none' : 'block';
-        document.getElementById('ctrl-rhy').style.display = (g.c === GRhy) ? 'block' : 'none';
-        Layer.sw('l-game');
+      localStorage.setItem('gas_web_app_url', gasUrl);
 
-        // start frame loop safely
-        const frame = () => {
-            if(paused || !act) { loopId = null; return; }
-            try{
-                act.t++;
-                act.upd(); 
-                Render.Draw.clear(act.cfg?.bg);
-                act.drw(); 
-                document.getElementById('g-lvl').innerText = act.lv; document.getElementById('g-scr').innerText = act.score;
-                document.getElementById('g-hp').innerText = Math.max(0, Math.floor(act.hp));
-            }catch(e){ console.error('Game loop error', e); }
-            loopId = requestAnimationFrame(frame);
-        };
-        // ensure only one RAF loop runs
-        if(loopId) cancelAnimationFrame(loopId);
-        loopId = requestAnimationFrame(frame);
-    }
-    
-    function pause() { 
-        paused = true;
-        stopLoop();
-        Layer.modal(Lang.t('modal_pause'), Lang.t('modal_rest'), 
-            `<button class="btn btn-blue" onclick="Eng.resume()">${Lang.t('btn_continue')}</button> <button class="btn btn-red" onclick="Eng.quit()">${Lang.t('btn_exit')}</button>`);
-    }
-    
-    function resume() {
-        if(!act) return;
-        paused = false;
-        Layer.closeModal();
-        // restart loop if not running
-        if(!loopId) {
-            const frame = () => {
-                if(paused || !act) { loopId = null; return; }
-                try{ act.t++; act.upd(); Render.Draw.clear(act.cfg?.bg); act.drw(); document.getElementById('g-lvl').innerText = act.lv; document.getElementById('g-scr').innerText = act.score; document.getElementById('g-hp').innerText = Math.max(0, Math.floor(act.hp)); }catch(e){console.error(e);} 
-                loopId = requestAnimationFrame(frame);
-            };
-            loopId = requestAnimationFrame(frame);
-        }
-    }
-    
-    function over(win) { 
-        paused = true;
-        stopLoop();
-        if(win) {
-            let r = 50 + act.lv*10; Sys.user.coins += r; 
-            if(!Sys.user.progress) Sys.user.progress = {};
-            if(!Sys.user.progress[gIdx] || act.lv > Sys.user.progress[gIdx]) Sys.user.progress[gIdx] = act.lv;
-            Sys.save();
-            Layer.modal(Lang.t('msg_win'), `${Lang.t('msg_get_coin')}: ${r}`, `<button class="btn btn-green" onclick="Eng.next()">${Lang.t('btn_next')}</button> <button class="btn btn-blue" onclick="Eng.quit()">${Lang.t('btn_lobby')}</button>`);
+      const btn = document.getElementById('btnDownloadCloud');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 下載中...`;
+      lucide.createIcons();
+
+      fetch(gasUrl)
+      .then(res => {
+        if (!res.ok) throw new Error("Network Response error");
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.members) {
+          expenses = data.expenses || [];
+          members = data.members;
+          if (data.foodItems) foodItems = data.foodItems;
+          if (data.prepItems) prepItems = data.prepItems;
+
+          generateCoins(25);
+          recalculateAll();
+          renderMembers();
+          renderFood();
+          renderPrep();
+          alert("📜 雲端拉取成功！已同步最新美西公路探險狀態！");
         } else {
-            Layer.modal(Lang.t('msg_fail'), "", `<button class="btn btn-blue" onclick="Eng.retry()">${Lang.t('btn_retry')}</button> <button class="btn btn-red" onclick="Eng.quit()">${Lang.t('btn_exit')}</button>`);
+          alert("💨 雲端是空的！請先輸入資料並點擊「上傳雲端」！");
         }
+      })
+      .catch(err => {
+        alert("💥 下載失敗！請確認 GAS 網址無誤，且有給予「Anyone」存取權限。");
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        lucide.createIcons();
+      });
     }
-    
-    function next() { realStart(gIdx, act.lv+1); }
-    function retry() { realStart(gIdx, act.lv); }
-    function quit() { stopLoop(); act=null; Layer.sw('l-menu'); Layer.closeModal(); }
-    
-    return { start, realStart, pause, resume, quit, over, next, retry };
-})();
 
-const Menu = {
-    init: () => { Menu.renderGames(); Menu.renderShop(); Menu.renderBag(); },
-    renderGames: () => { document.getElementById('p-games').innerHTML = Games.map((g,i)=>`<div class="game-card" onclick="Eng.start(${i})"><span class="icon-img">${g.i}</span><h4 data-t="${g.t}">${Lang.t(g.t)}</h4></div>`).join(''); },
-    renderShop: () => { document.getElementById('p-shop').innerHTML = Sys.items.map((it,i)=>`<div class="shop-item"><div style="font-size:24px;">${it.icon}</div><h4 data-t="${it.t}">${Lang.t(it.t)}</h4><p data-t="${it.d}">${Lang.t(it.d)}</p><button class="btn btn-gold" onclick="Sys.buy(${i})"><span data-t="shop_buy">${Lang.t('shop_buy')}</span> 💰 ${it.price}</button></div>`).join(''); },
-    renderBag: () => { 
-        const bag = document.getElementById('p-bag');
-        if(Sys.user.bag.length === 0) bag.innerHTML = `<div style='grid-column:1/-1; text-align:center; color:#666;' data-t="bag_empty">${Lang.t('bag_empty')}</div>`;
-        else bag.innerHTML = Sys.user.bag.map(it=>`<div class="shop-item" style="border-color:var(--primary)"><h4 data-t="${it.t}">${Lang.t(it.t)}</h4><p data-t="bag_equip">${Lang.t('bag_equip')}</p><p>${it.icon}</p></div>`).join('');
-    },
-    sw: (tab, el) => {
-        if(el) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
-        document.querySelectorAll('.content').forEach(c=>{c.classList.remove('active-grid'); c.classList.remove('active-block'); c.style.display='none';});
-        const target = document.getElementById('p-'+tab);
-        target.style.display = 'grid'; 
-        if(tab === 'ai') target.style.display = 'block';
-        else target.classList.add('active-grid');
+    // ==================== 2. 成員管理模組 ====================
+    function renderMembers() {
+      const listEl = document.getElementById('membersList');
+      const payerSelect = document.getElementById('expPayer');
+      listEl.innerHTML = '';
+      payerSelect.innerHTML = '';
+
+      members.forEach(m => {
+        const isBday = (m === 'Chris' || m === 'Steve') ? ' 🎂' : '';
+        const div = document.createElement('div');
+        div.className = "flex items-center justify-between p-2.5 bg-[#fcf5ec] border border-[#8b5e3c]/30 rounded-lg text-xs font-black shadow-sm transition-all";
+        div.innerHTML = `
+          <span class="text-[#3e2723]">👤 ${m}${isBday}</span>
+          <button onclick="removeMember('${m}')" class="text-rose-700 hover:text-rose-900 transition-colors p-1" title="踢出探險隊">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        `;
+        listEl.appendChild(div);
+
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m + isBday;
+        payerSelect.appendChild(opt);
+      });
+
+      const warning = document.getElementById('memberWarning');
+      if (members.length <= 1) {
+        warning.classList.remove('hidden');
+      } else {
+        warning.classList.add('hidden');
+      }
+
+      lucide.createIcons();
     }
-};
 
-const AI = {
-    ask: () => {
-        const t = document.getElementById('chat-in').value;
-        const h = document.getElementById('chat-hist');
-        if(!t) return;
-        h.innerHTML += `<div style="color:#aaa; margin-top:5px;">Q: ${t}</div>`;
-        document.getElementById('chat-in').value = '';
-        setTimeout(()=> { h.innerHTML += `<div style="color:var(--primary); margin-top:5px;">AI: ${Lang.t('ai_welcome')}</div>`; h.scrollTop = h.scrollHeight; }, 500);
+    function addMember(e) {
+      e.preventDefault();
+      const input = document.getElementById('newMemberInput');
+      const name = input.value.trim();
+      if (!name) return;
+      if (members.includes(name)) {
+        alert("此隊員已在名冊中！");
+        return;
+      }
+      members.push(name);
+      input.value = '';
+      renderMembers();
+      recalculateAll();
+      playCoinSound();
     }
-};
 
-Render.resize();
-</script>
+    function removeMember(name) {
+      if (members.length <= 1) return;
+      members = members.filter(m => m !== name);
+      renderMembers();
+      recalculateAll();
+    }
+
+    // ==================== 3. 帳目管理與最小清算演算法 ====================
+    function renderExpenses() {
+      const listEl = document.getElementById('expensesHistoryList');
+      listEl.innerHTML = '';
+
+      expenses.forEach(exp => {
+        const div = document.createElement('div');
+        div.className = "group flex items-center justify-between p-4 bg-[#fdfaf3] hover:bg-[#f3e9dc] border border-[#8b5e3c]/20 rounded-xl transition-all hover:shadow-md";
+        div.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-extrabold text-[#3e2723] text-sm">${exp.title}</span>
+              <span class="bg-[#8b5e3c]/10 text-[#8b5e3c] text-[10px] font-black px-1.5 py-0.5 rounded border border-[#8b5e3c]/20">${exp.category}</span>
+            </div>
+            <div class="text-[10px] text-stone-500 font-bold flex items-center gap-3">
+              <span>📅 日期：${exp.date}</span>
+              <span>👤 墊款人：<strong>${exp.payer}</strong></span>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="font-black text-base text-[#5d4037]">$${exp.amount.toFixed(2)}</span>
+            <button onclick="deleteExpense(${exp.id})" class="text-stone-400 hover:text-rose-700 transition-colors p-1" title="刪除此帳目">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+        listEl.appendChild(div);
+      });
+
+      document.getElementById('expenseCount').textContent = `${expenses.length} 筆`;
+      lucide.createIcons();
+    }
+
+    function addExpense(e) {
+      e.preventDefault();
+      const title = document.getElementById('expTitle').value.trim();
+      const amount = parseFloat(document.getElementById('expAmount').value);
+      const category = document.getElementById('expCategory').value;
+      const payer = document.getElementById('expPayer').value;
+
+      if (!title || isNaN(amount) || amount <= 0) return;
+
+      generateCoins(15);
+      
+      const overlay = document.getElementById('stampOverlay');
+      overlay.classList.remove('hidden');
+      overlay.classList.add('stamp-active');
+      playStampSound();
+
+      setTimeout(() => {
+        overlay.classList.remove('stamp-active');
+        overlay.classList.add('hidden');
+      }, 950);
+
+      const dayOffset = Math.floor(Math.random() * 12) + 23;
+      const newExp = {
+        id: Date.now(),
+        title,
+        amount,
+        payer,
+        category,
+        date: `05/${dayOffset}`
+      };
+
+      expenses.unshift(newExp);
+      
+      document.getElementById('expTitle').value = '';
+      document.getElementById('expAmount').value = '';
+
+      recalculateAll();
+    }
+
+    function deleteExpense(id) {
+      expenses = expenses.filter(exp => exp.id !== id);
+      recalculateAll();
+    }
+
+    function recalculateAll() {
+      renderExpenses();
+
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const perPerson = members.length > 0 ? total / members.length : 0;
+
+      document.getElementById('totalExpensesDisplay').textContent = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('avgExpensesDisplay').textContent = `$${perPerson.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('averageLabel').textContent = `⚖️ 每人應平攤 (${members.length} 人)`;
+
+      const paidMap = {};
+      members.forEach(m => paidMap[m] = 0);
+      expenses.forEach(e => {
+        if (members.includes(e.payer)) {
+          paidMap[e.payer] += e.amount;
+        }
+      });
+
+      const balSheet = document.getElementById('balanceSheet');
+      balSheet.innerHTML = '';
+
+      const balances = members.map(m => {
+        const paid = paidMap[m] || 0;
+        const net = paid - perPerson;
+        return { name: m, paid, net };
+      });
+
+      balances.forEach(b => {
+        const div = document.createElement('div');
+        div.className = "flex justify-between items-center py-1";
+        
+        let tag = '';
+        if (b.net >= 0.01) {
+          tag = `<span class="text-emerald-800 bg-emerald-100 font-black px-2 py-0.5 rounded text-[10px]">收 $${b.net.toFixed(1)}</span>`;
+        } else if (b.net <= -0.01) {
+          tag = `<span class="text-rose-800 bg-rose-100 font-black px-2 py-0.5 rounded text-[10px]">付 $${Math.abs(b.net).toFixed(1)}</span>`;
+        } else {
+          tag = `<span class="text-stone-500 bg-stone-100 font-black px-2 py-0.5 rounded text-[10px]">已平</span>`;
+        }
+
+        div.innerHTML = `
+          <div class="font-extrabold text-[#3e2723]">${b.name}</div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] text-stone-500 font-bold">已付 $${b.paid.toFixed(1)}</span>
+            ${tag}
+          </div>
+        `;
+        balSheet.appendChild(div);
+      });
+
+      calculateOptimizedDebts(balances);
+    }
+
+    let optimizedDebtsToShare = [];
+
+    function calculateOptimizedDebts(balances) {
+      let debtors = balances.filter(b => b.net < -0.01).sort((a, b) => a.net - b.net);
+      let creditors = balances.filter(b => b.net > 0.01).sort((a, b) => b.net - a.net);
+
+      const container = document.getElementById('optimizedDebtsList');
+      container.innerHTML = '';
+      optimizedDebtsToShare = [];
+
+      let i = 0;
+      let j = 0;
+
+      while (i < debtors.length && j < creditors.length) {
+        let debtor = debtors[i];
+        let creditor = creditors[j];
+
+        let payAmount = Math.min(Math.abs(debtor.net), creditor.net);
+
+        if (payAmount > 0.01) {
+          optimizedDebtsToShare.push({
+            from: debtor.name,
+            to: creditor.name,
+            amount: payAmount
+          });
+        }
+
+        debtor.net += payAmount;
+        creditor.net -= payAmount;
+
+        if (Math.abs(debtor.net) < 0.01) i++;
+        if (Math.abs(creditor.net) < 0.01) j++;
+      }
+
+      if (optimizedDebtsToShare.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs">
+            <span class="text-2xl block mb-1">🎉</span>
+            <p class="font-black text-emerald-950">大家出資完美平衡！</p>
+            <p class="text-[10px] text-emerald-800 mt-0.5">無人需要額外轉帳付款，分贓大圓滿！</p>
+          </div>
+        `;
+        return;
+      }
+
+      optimizedDebtsToShare.forEach((debt, index) => {
+        const div = document.createElement('div');
+        div.className = "bg-white/80 border border-amber-800/20 p-3 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-all";
+        div.innerHTML = `
+          <div class="flex items-center gap-2 text-xs font-bold text-stone-800">
+            <span class="w-5 h-5 bg-amber-800 text-amber-50 rounded-full flex items-center justify-center text-[10px] font-black">${index+1}</span>
+            <div>
+              <span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">${debt.from}</span>
+              <span class="mx-1 text-stone-400">➔ 支付金幣給 ➔</span>
+              <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">${debt.to}</span>
+            </div>
+          </div>
+          <span class="font-black text-xs text-[#3e2723]">$${debt.amount.toFixed(2)}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function copyDebtsToClipboard() {
+      let total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      let perPerson = members.length > 0 ? total / members.length : 0;
+
+      let text = `📜 ─── 美西 4 州 ‧ 冒險旅費分贓帳卷 ─── 📜\n\n`;
+      text += `💰 旅途累計黃金：$${total.toFixed(2)} USD\n`;
+      text += `👥 冒險隊員 (${members.length} 人)：${members.join(', ')}\n`;
+      text += `⚖️ 每人應平攤：$${perPerson.toFixed(2)} USD\n\n`;
+      text += `📍 最省事債務清算對照指南：\n`;
+
+      if (optimizedDebtsToShare.length === 0) {
+        text += `   🎉 大夥帳目完美平整！無人需要額外付款！`;
+      } else {
+        optimizedDebtsToShare.forEach((debt, idx) => {
+          text += `   【${idx+1}】 ${debt.from} ➔ 支付 $${debt.amount.toFixed(2)} USD ➔ 給 ${debt.to}\n`;
+        });
+      }
+
+      text += `\n✨ 分贓明細一目了然！大夥兒轉好金幣後，我們下一場冒險再會！🗺️🚗`;
+
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        alert("📜 討債金紙手卷已抄寫至您的剪貼簿！快貼去 LINE 群組大聲討債吧！");
+      } catch (err) {
+        alert("複製失敗，請手動抄寫！");
+      }
+      document.body.removeChild(textarea);
+    }
+
+    // ==================== 4. 14天行程 (Timeline) 模組 ====================
+    function renderDayGrid() {
+      const container = document.getElementById('dayGridSelector');
+      container.innerHTML = '';
+
+      itinerary.forEach((day, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `day-btn-${idx}`;
+        btn.onclick = () => selectDay(idx);
+        
+        const bdayIcon = day.birthday ? `<span class="absolute -top-1 -right-1 bg-rose-700 text-white text-[8px] w-4 h-4 flex items-center justify-center rounded-full animate-bounce">🎂</span>` : '';
+        
+        btn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-white text-stone-700 border-[#8b5e3c]/20 hover:border-[#8b5e3c]";
+        btn.innerHTML = `
+          <span class="text-[9px] font-bold opacity-75">Day</span>
+          <span class="text-base font-black leading-tight">${day.day}</span>
+          <span class="text-[8px] opacity-70 font-sans mt-0.5">${day.date.split(' ')[0]}</span>
+          ${bdayIcon}
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectDay(index) {
+      document.querySelectorAll('#dayGridSelector button').forEach(btn => {
+        btn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-white text-stone-700 border-[#8b5e3c]/20 hover:border-[#8b5e3c]";
+      });
+      const activeBtn = document.getElementById(`day-btn-${index}`);
+      if (activeBtn) {
+        activeBtn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md";
+      }
+
+      const day = itinerary[index];
+      const detailEl = document.getElementById('dayDetailCard');
+      
+      const bdayBanner = day.birthday ? `
+        <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-3 animate-pulse">
+          <div class="bg-rose-700 text-white p-2.5 rounded-lg text-lg">🎁</div>
+          <div>
+            <h4 class="font-black text-rose-950 text-sm">${day.birthday}</h4>
+            <p class="text-xs text-rose-800">荒原之神賜福壽星！在極具風情的 Airbnb 大擺生日慶祝筵席！</p>
+          </div>
+        </div>
+      ` : '';
+
+      detailEl.innerHTML = `
+        <div class="parchment rounded-2xl burnt-edge overflow-hidden text-[#3e2723] animate-roll">
+          <div class="p-6 text-white ${day.color} relative border-b border-[#8b5e3c]/30">
+            <div class="absolute top-4 right-4 text-7xl font-black text-white/10 select-none pointer-events-none">DAY ${day.day}</div>
+            <div class="flex items-center gap-2">
+              <span class="bg-white/25 backdrop-blur-md text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">${day.state}</span>
+              <span class="text-xs font-bold opacity-90">${day.date}</span>
+            </div>
+            <h2 class="text-xl md:text-3xl font-black mt-3 drop-shadow-sm">${day.title}</h2>
+            <div class="flex items-center gap-1.5 text-xs mt-2 opacity-95">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+              <span>${day.location}</span>
+            </div>
+          </div>
+
+          <div class="p-6 md:p-8 space-y-6">
+            ${bdayBanner}
+
+            <div>
+              <h3 class="text-xs font-bold text-amber-900 uppercase tracking-widest mb-1">🗺️ 航海探索紀要</h3>
+              <p class="text-[#3e2723] font-bold leading-relaxed text-sm">${day.desc}</p>
+            </div>
+
+            <div>
+              <h3 class="text-xs font-bold text-amber-900 uppercase tracking-widest mb-3.5">⚔️ 今日攻略景點 (Highlights)</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                ${day.highlights.map(h => `
+                  <div class="bg-amber-50/50 border border-[#8b5e3c]/20 p-3 rounded-lg flex items-start gap-2">
+                    <span class="text-emerald-700 font-extrabold">✓</span>
+                    <span class="text-xs font-bold text-[#3e2723]">${h}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+
+            <div class="bg-amber-50/70 border border-[#8b5e3c]/30 p-4 rounded-xl flex items-start gap-3">
+              <i data-lucide="alert-circle" class="w-5 h-5 text-[#8b5e3c] shrink-0 mt-0.5"></i>
+              <div>
+                <h4 class="font-black text-amber-950 text-xs">航海提示 (Tips)</h4>
+                <p class="text-xs text-[#5d4037] mt-1 leading-relaxed italic">${day.tips}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    // ==================== 5. 越野車行進地圖 (Map) 模組 ====================
+    function driveToPoint(x, y, timelineDayIndex) {
+      playCarHorn();
+      
+      const car = document.getElementById('mapCarGroup');
+      car.setAttribute('transform', `translate(${x}, ${y}) scale(1.5)`);
+
+      setTimeout(() => {
+        switchTab('timeline');
+        selectDay(timelineDayIndex);
+        generateCoins(8, window.innerWidth / 2, 200);
+      }, 1100);
+    }
+
+    // ==================== 6. 補給美食打卡 (Food) 模組 ====================
+    function renderFood() {
+      const container = document.getElementById('foodGrid');
+      container.innerHTML = '';
+
+      foodItems.forEach(item => {
+        const div = document.createElement('div');
+        div.onclick = () => toggleFood(item.id);
+        
+        const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300 shadow-sm' : 'bg-white border-[#8b5e3c]/30 hover:border-[#8b5e3c]';
+        const checkboxClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-[#fbfbf9]';
+
+        div.className = `p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${activeClass}`;
+        div.innerHTML = `
+          <div class="mt-1 shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ${checkboxClass}">
+            ${item.checked ? '<span class="text-[10px] font-black">✓</span>' : ''}
+          </div>
+          <div>
+            <h3 class="font-black text-sm ${item.checked ? 'text-emerald-950 line-through opacity-70' : 'text-slate-800'}">${item.name}</h3>
+            <p class="text-[10px] text-stone-500 mt-1 leading-relaxed">${item.desc}</p>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+
+      const checkedCount = foodItems.filter(f => f.checked).length;
+      document.getElementById('foodProgressBadge').textContent = `已解鎖補給: ${checkedCount} / ${foodItems.length}`;
+    }
+
+    function toggleFood(id) {
+      foodItems = foodItems.map(f => {
+        if (f.id === id) {
+          const updated = !f.checked;
+          if (updated) {
+            playCoinSound();
+            generateCoins(4);
+          }
+          return { ...f, checked: updated };
+        }
+        return f;
+      });
+      renderFood();
+    }
+
+    // ==================== 7. 備戰行李 (Prep) 模組 ====================
+    function renderPrep() {
+      const container = document.getElementById('prepItemsGrid');
+      container.innerHTML = '';
+
+      const categories = {
+        documents: '🛡️ 冒險者關鍵契書與金流',
+        tech: '🔌 3C 電子充能裝備',
+        luggage: '📦 行李大包託運規範',
+        clothing: '🧥 避暑防寒防風披風'
+      };
+
+      Object.keys(categories).forEach(cat => {
+        const catItems = prepItems.filter(p => p.category === cat);
+        
+        const section = document.createElement('div');
+        section.className = "space-y-2";
+        section.innerHTML = `<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">${categories[cat]}</h4>`;
+        
+        const grid = document.createElement('div');
+        grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
+
+        catItems.forEach(item => {
+          const itemDiv = document.createElement('div');
+          itemDiv.onclick = () => togglePrep(item.id);
+          
+          const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-stone-200 hover:border-[#8b5e3c]' ;
+          const checkClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-white';
+
+          itemDiv.className = `p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${activeClass}`;
+          itemDiv.innerHTML = `
+            <div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ${checkClass}">
+              ${item.checked ? '<span class="text-[9px] font-black">✓</span>' : ''}
+            </div>
+            <span class="text-xs font-bold ${item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]'}">${item.text}</span>
+          `;
+          grid.appendChild(itemDiv);
+        });
+
+        section.appendChild(grid);
+        container.appendChild(section);
+      });
+
+      const packedCount = prepItems.filter(p => p.checked).length;
+      document.getElementById('packProgressBadge').textContent = `已裝載武器：${packedCount} / ${prepItems.length}`;
+    }
+
+    function togglePrep(id) {
+      prepItems = prepItems.map(p => {
+        if (p.id === id) {
+          const updated = !p.checked;
+          if (updated) {
+            playCoinSound();
+          }
+          return { ...p, checked: updated };
+        }
+        return p;
+      });
+      renderPrep();
+    }
+
+    // ==================== 8. 冒險生存工具箱 (Toolkit) ====================
+    function convertTime() {
+      const twTime = parseInt(document.getElementById('tpeTimeSlider').value);
+      document.getElementById('tpeTimeDisplay').textContent = `${twTime}:00`;
+
+      const pdtRaw = twTime - 15;
+      const pdtTime = (pdtRaw + 24) % 24;
+      document.getElementById('pdtTimeDisplay').textContent = `${pdtTime}:00`;
+      document.getElementById('pdtDayLabel').textContent = pdtRaw < 0 ? '前一天' : '當天';
+
+      const mstRaw = twTime - 15;
+      const mstTime = (mstRaw + 24) % 24;
+      document.getElementById('mstTimeDisplay').textContent = `${mstTime}:00`;
+      document.getElementById('mstDayLabel').textContent = mstRaw < 0 ? '前一天' : '當天';
+    }
+
+    function calcUnit(type) {
+      if (type === 'F') {
+        const f = parseFloat(document.getElementById('fVal').value) || 0;
+        document.getElementById('cVal').value = ((f - 32) * 5 / 9).toFixed(1);
+      } else if (type === 'C') {
+        const c = parseFloat(document.getElementById('cVal').value) || 0;
+        document.getElementById('fVal').value = (c * 9 / 5 + 32).toFixed(1);
+      } else if (type === 'M') {
+        const miles = parseFloat(document.getElementById('mileVal').value) || 0;
+        document.getElementById('kmVal').value = (miles * 1.60934).toFixed(1);
+      } else if (type === 'K') {
+        const km = parseFloat(document.getElementById('kmVal').value) || 0;
+        document.getElementById('mileVal').value = (km / 1.60934).toFixed(1);
+      }
+    }
+  </script>
 </body>
 </html>
