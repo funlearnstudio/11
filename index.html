@@ -150,7 +150,7 @@
         「召集 Chris、Steve、Orinda、Jamilee！啟封神秘的跨州公路尋寶圖，踏上長達 14 天的狂野公路冒險，解鎖亞利桑那與加州的黃金秘寶！」
       </p>
       
-      <!-- 此按鈕點擊後將會正常呼叫 JavaScript 中的 startGame 函數 -->
+      <!-- 進入主頁按鈕 -->
       <button onclick="startGame()" class="relative overflow-hidden group bg-gradient-to-r from-amber-600 to-amber-800 text-amber-50 font-black px-8 py-4 rounded-xl border-2 border-amber-400 shadow-xl transition-all hover:scale-105 active:scale-95 text-lg tracking-wider">
         <span class="relative z-10 flex items-center gap-2">
           <i data-lucide="key" class="w-5 h-5 animate-bounce"></i>
@@ -216,36 +216,31 @@
     <!-- ==================== TAB 5: 尋寶分贓帳本 ==================== -->
     <section id="content-budget" class="space-y-8">
       
-      <!-- GAS 雲端儲存同步面板 (一鍵存檔神器) -->
-      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge portal-pulse border-2 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6">
+      <!-- GAS 雲端儲存同步面板 (全新升級：顯示即時連線同步指示燈) -->
+      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge portal-pulse border-2 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-6">
         <div class="space-y-1">
           <h2 class="text-xl font-black flex items-center gap-2 text-[#d97706]">
             <i data-lucide="cloud-lightning" class="w-6 h-6 animate-pulse"></i>
-            雲端傳音法陣 (Google Sheet 永久存檔備份)
+            雲端同步法陣 (Google Sheet 永久自動同步)
           </h2>
           <p class="text-xs text-[#5d4037]/80 italic">
-            「在此輸入您部署的 GAS Web App URL，隨時在各隊員手機間一鍵同步最新帳本數據、補給、打包狀態！」
+            「本網頁支援『自動存檔與拉取』。任何記帳、補給打卡與打包變更都會直接在背景悄悄存入 Google Sheet 雲端！」
           </p>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 items-center">
-          <input type="text" id="gasUrlInput" placeholder="貼上您的 GAS Web App 部署網址..." class="w-full sm:w-72 bg-[#fbf8f3] border-2 border-[#8b5e3c]/60 text-xs font-bold p-2.5 rounded-lg focus:border-[#d97706] focus:outline-none placeholder-[#8b5e3c]/40 text-[#3e2723]">
-          
-          <div class="flex gap-2 w-full sm:w-auto">
-            <button id="btnUploadCloud" onclick="saveToGasCloud()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#d97706] hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg text-xs font-black transition-all shadow-md">
-              <i data-lucide="cloud-upload" class="w-4 h-4"></i> 上傳雲端
-            </button>
-            <button id="btnDownloadCloud" onclick="loadFromGasCloud()" class="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-amber-800 hover:bg-amber-950 text-white px-4 py-2.5 rounded-lg text-xs font-black transition-all shadow-md">
-              <i data-lucide="cloud-download" class="w-4 h-4"></i> 拉取更新
-            </button>
-            <button onclick="openGasSetupModal()" class="bg-[#3e2723] hover:bg-black text-[#f5e6d3] p-2.5 rounded-lg text-xs font-black transition-all" title="查看設定與腳本教學">
-              <i data-lucide="help-circle" class="w-4 h-4"></i>
-            </button>
+        <div class="flex gap-3 justify-end items-center shrink-0">
+          <!-- 背景狀態指示燈 -->
+          <div id="syncStatusBanner" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black bg-[#2a1a15] text-amber-100 border border-[#8b5e3c]/60">
+            <span id="syncStatusIndicator" class="w-2 h-2 rounded-full bg-stone-500"></span>
+            <span id="syncStatusText">偵測雲端狀態中...</span>
           </div>
+          <button onclick="openGasSetupModal()" class="bg-[#3e2723] hover:bg-black text-[#f5e6d3] p-2.5 rounded-lg text-xs font-black transition-all" title="查看 Google 部署腳本教學">
+            <i data-lucide="help-circle" class="w-4.5 h-4.5"></i>
+          </button>
         </div>
       </div>
 
-      <!-- 記帳大卷軸控制區 -->
+      <!-- 記帳控制區 -->
       <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <h2 class="text-2xl font-black flex items-center gap-2 text-[#5d4037]">
@@ -609,7 +604,7 @@
         </div>
       </div>
 
-      <!-- 行李打包進度格 -->
+      <!-- 行理打包進度格 -->
       <div class="parchment p-6 rounded-2xl burnt-edge">
         <div class="flex justify-between items-center border-b border-[#8b5e3c]/30 pb-3 mb-6">
           <h3 class="font-black text-[#3e2723] text-sm flex items-center gap-2">
@@ -765,7 +760,7 @@ function doPost(e) {
         </div>
 
         <p class="text-xs text-rose-800 font-bold">
-          ⚠️ 部署完成後，複製「網頁應用程式網址」，回到本網站貼在最上方的輸入欄，即刻享有一鍵雲端共享功能！
+          ⚠️ 部署完成後，將複製回來的「網頁應用程式網址」，直接寫死貼到程式碼最前方的 <code>const GAS_URL = "您的網址"</code> 變數中，大夥兒就能直接享有一鍵永久保存同步功能！
         </p>
       </div>
     </div>
@@ -781,6 +776,11 @@ function doPost(e) {
   </footer>
 
   <script>
+    // ==================== 0. 全域硬編碼同步網址設定 (GAS_URL) ====================
+    // 👈 貼心的自動同步核心：請在這裡填入您的 Google Apps Script 網頁應用程式 URL
+    // 網頁一打開便會自動讀取雲端、任何記帳與打卡修改也會自動無聲同步至您的 Google Sheet 試算表！
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxx2NGXpG9kXzt9z6gMeTvzio4UhSCvnU4XPCheTdtqXCiX8yvfa-mkhMJk7zl31GKE8g/exec"; 
+
     // ==================== 音效合成模組 (Web Audio API) ====================
     let audioCtx = null;
 
@@ -1007,8 +1007,8 @@ function doPost(e) {
       { day: 5, date: '05/27 (三)', title: '地獄廚房饗宴 🍴 賭城彈性探索', state: '內華達 Nevada', location: '拉斯維加斯市區', desc: '早上完全彈性休息。下午 15:00 準時進入 Gordon Ramsay 的 Hell\'s Kitchen，品嚐傳奇的威靈頓牛排！晚上大家可自費欣賞精彩絕倫的太陽馬戲團大秀。', highlights: ['朝聖地獄廚房奢華午晚餐', '賭城暢貨中心 Outlet 大瘋購', '極致炫目豪奢賭城夜景'], tips: '地獄廚房服裝雖無嚴苛規定，但建議 Smart Casual，拍照更有儀式感！', color: 'bg-[#b91c1c]' },
       { day: 6, date: '05/28 (四)', title: '磅礴世界奇景 🌲 Steve 生日快樂！🎂', state: '亞利桑那 Arizona', location: '拉斯維加斯 ➔ 大峽谷 ➔ 佩吉市', desc: '清晨出發前往大峽谷國家公園南口，踏上世界七大奇景的邊緣！遊覽 Mather Point 與 Desert View 古塔，並於傍晚時分驅車至佩吉市營地，一同替 Steve 熱烈慶生！', birthday: '🎂 Steve 生日大狂歡！', highlights: ['萬丈深淵大峽谷震撼眺望', 'Desert View 古塔金黃日落', '佩吉市星空 Airbnb 生日大趴'], tips: '大峽谷海拔約 2200 公尺，起風或夕陽西下後極其寒冷，務必穿足保暖衣物！', color: 'bg-[#a16207]' },
       { day: 7, date: '05/29 (五)', title: '大自然光雕魔法 ✨ 羚羊谷與馬蹄灣', state: '亞利桑那 Arizona', location: '佩吉市 (Antelope & Horseshoe)', desc: '今天睡飽出發！中午參與羚羊谷印地安導覽，捕捉上帝撒在波浪岩壁上的天使光芒。傍晚在馬蹄灣懸崖邊緣，眺望科羅拉多河 360 度大拐彎夕陽。', highlights: ['羚羊谷不可思議的波浪光影', '馬蹄灣 300 米深淵壯麗日落', '美式公路小鎮牛排館聚餐'], tips: '羚羊谷內嚴禁攜帶自拍棒及背包，僅能帶相機、手機與水，請務必配合。', color: 'bg-[#a16207]' },
-      { day: 8, date: '05/30 (六)', title: '再見荒野 ✈️ 飛向舊金山海灣', state: '加州 California', location: '佩吉市 ➔ 拉斯維加斯還車 ➔ 舊金山 (SFO)', desc: '一早駛離佩吉，返回拉斯維加斯機場還車。搭乘國內線飛抵優雅的海灣城市舊金山！重新租車後開過長長的跨海大橋，入住奧克蘭藝術氛圍旅宿。', highlights: ['再看一眼驚艷的內華達荒漠', '搭國內航班鳥瞰美西山脈', '跨越海灣入住東灣藝術別墅'], tips: '美國國內線班機托運行李通常需當場收費，請事先將行李重量進行優化。', color: 'bg-[#155e75]' },
-      { day: 9, date: '05/31 (日)', title: '碼頭慵懶海獅 🌊 惡魔島監獄之夜', state: '加州 California', location: '漁人碼頭 & 惡魔島 & 金門大橋', desc: '上午在 Pier 39 碼頭看成群的海獅，午餐享用 Boudin Bakery 熱騰騰的酸麵包巧達濃湯。下午搭船踏上神祕的惡魔島監獄探秘。黃昏至金門大橋合影！', highlights: ['39號碼頭肥胖海獅曬太陽', '惡魔島(Alcatraz)聯盤監獄探秘', '金門大橋最經典的黃昏角度'], tips: '舊金山港口海風猛烈，氣溫宛如冬季，請務必攜帶防風禦寒厚外套。', color: 'bg-[#155e75]' },
+      { day: 8, date: '05/30 (六)', title: '再見荒野 ✈️ 飛向舊金山海灣', state: '加州 California', location: '佩吉市 ➔ 拉斯維加斯機場還車 ➔ 舊金山 (SFO)', desc: '一早駛離佩吉，返回拉斯維加斯機場還車。搭乘國內線飛抵優雅的海灣城市舊金山！重新租車後開過長長的跨海大橋，入住奧克蘭藝術氛圍旅宿。', highlights: ['再看一眼驚艷的內華達荒漠', '搭國內航班鳥瞰美西山脈', '跨越海灣入住東灣藝術別墅'], tips: '美國國內線班機托運行李通常需當場收費，請事先將行李重量進行優化。', color: 'bg-[#155e75]' },
+      { day: 9, date: '05/31 (日)', title: '碼頭慵懶海獅 🌊 惡魔島監獄之夜', state: '加州 California', location: '漁人碼頭 & 惡魔島 & 金門大橋', desc: '上午在 Pier 39 碼頭看成群的海獅，午餐享用 Boudin Bakery 熱騰騰的酸麵包巧達湯。下午搭船踏上神祕的惡魔島監獄探秘。黃昏至金門大橋合影！', highlights: ['39號碼頭肥胖海獅曬太陽', '惡魔島(Alcatraz)聯盤監獄探秘', '金門大橋最經典的黃昏角度'], tips: '舊金山港口海風猛烈，氣溫宛如冬季，請務必攜帶防風禦寒厚外套。', color: 'bg-[#155e75]' },
       { day: 10, date: '06/01 (一)', title: '傾斜斜坡九曲花街 🚃 復古叮叮車之旅', state: '加州 California', location: '舊金山市區', desc: '挑戰舊金山世界著名的極限大斜坡！徒步走下花團錦簇的九曲花街，隨後掛在叮叮車外側穿梭市區。下午在聯合廣場盡情購物，隨後在文青聖地藍瓶咖啡小憩。', highlights: ['九曲花街 Lombard 的考驗', '像拍電影般掛在車旁搭叮叮車', '藍瓶咖啡創始地細細品嚐風味'], tips: '叮叮車排隊人潮極多，建議提早於手機 App 購買乘車券。', color: 'bg-[#3730a3]' },
       { day: 11, date: '06/02 (二)', title: '文創藝術奧克蘭 🎓 柏克萊名校洗禮', state: '加州 California', location: '奧克蘭 ➔ 柏克萊大學 (UC Berkeley)', desc: '上午探訪奧克蘭港區藝術市集，中午前往世界頂尖學府柏克萊大學校園，參觀壯麗的薩瑟塔，沉浸在濃濃的學院與學術氛圍中。', highlights: ['東灣奧克蘭港文創海邊漫步', '柏克萊大學名校薩瑟塔鐘樓', '品嚐在地美式早午餐排隊名店'], tips: '校園極度寬廣，建議穿著最舒適好走的運動鞋前來。', color: 'bg-[#3730a3]' },
       { day: 12, date: '06/03 (三)', title: '瘋狂大採購伴手禮 💔 踏上歸途', state: '歸途航線', location: '舊金山市區 ➔ SFO機場 ➔ 台北', desc: '最後一整天，大家實地採買伴手禮。晚上 22:00 前抵達 SFO 機場辦理退稅與 Check-In，告別這趟奇幻冒險。', highlights: ['美式巧克力與特色周邊瘋狂採買', '舊金山機場免稅店最後補貨', '14天公路夥伴依依不捨互道珍重'], tips: '國際航線安檢與行李托運較嚴，請務必提前 3 小時抵達機場。', color: 'bg-[#475569]' },
@@ -1024,6 +1024,7 @@ function doPost(e) {
       }
     }
 
+    // 關閉 GAS 同步面板的函數
     function closeGasSetupModal() {
       const modal = document.getElementById('gasSetupModal');
       if (modal) {
@@ -1031,6 +1032,7 @@ function doPost(e) {
       }
     }
 
+    // 複製 GAS 代碼的函數
     function copyGasCode() {
       const code = document.getElementById('gasCodeBlock').textContent;
       const textarea = document.createElement('textarea');
@@ -1046,103 +1048,34 @@ function doPost(e) {
       document.body.removeChild(textarea);
     }
 
-    function saveToGasCloud() {
-      const gasUrl = document.getElementById('gasUrlInput').value.trim();
-      if (!gasUrl) {
-        alert("⚠️ 請先在輸入框中貼上您的 GAS Web App 部署網址！");
-        openGasSetupModal();
-        return;
+    // ==================== 2. 導覽列與分頁切換控制函數 ====================
+    function switchTab(tabId) {
+      document.querySelectorAll('section').forEach(function(sec) {
+        sec.classList.add('hidden');
+      });
+      const targetSec = document.getElementById('content-' + tabId);
+      if (targetSec) {
+        targetSec.classList.remove('hidden');
       }
 
-      localStorage.setItem('gas_web_app_url', gasUrl);
-
-      const payload = {
-        expenses,
-        members,
-        foodItems,
-        prepItems
-      };
-
-      const btn = document.getElementById('btnUploadCloud');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 上傳中...`;
-      lucide.createIcons();
-
-      fetch(gasUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-      .then(() => {
-        generateCoins(15);
-        alert("📜 羊皮帳卷已成功同步上載至您的 Google Sheets 雲端法陣！");
-      })
-      .catch(err => {
-        alert("💥 傳送失敗，請確認部署 URL 是否正確且權限已開至 Anyone！");
-      })
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        lucide.createIcons();
+      document.querySelectorAll('nav button').forEach(function(btn) {
+        btn.className = "flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]";
       });
-    }
-
-    function loadFromGasCloud() {
-      const gasUrl = document.getElementById('gasUrlInput').value.trim();
-      if (!gasUrl) {
-        alert("⚠️ 請先在輸入框中貼上您的 GAS Web App 部署網址！");
-        openGasSetupModal();
-        return;
+      const activeBtn = document.getElementById('tab-' + tabId);
+      if (activeBtn) {
+        activeBtn.className = "flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md transform -translate-y-0.5";
       }
 
-      localStorage.setItem('gas_web_app_url', gasUrl);
-
-      const btn = document.getElementById('btnDownloadCloud');
-      const originalText = btn.innerHTML;
-      btn.disabled = true;
-      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 下載中...`;
-      lucide.createIcons();
-
-      fetch(gasUrl)
-      .then(res => {
-        if (!res.ok) throw new Error("Network Response error");
-        return res.json();
-      })
-      .then(data => {
-        if (data && data.members) {
-          expenses = data.expenses || [];
-          members = data.members;
-          if (data.foodItems) foodItems = data.foodItems;
-          if (data.prepItems) prepItems = data.prepItems;
-
-          generateCoins(25);
-          recalculateAll();
-          renderMembers();
-          renderFood();
-          renderPrep();
-          alert("📜 雲端拉取成功！已同步最新美西公路探險狀態！");
-        } else {
-          alert("💨 雲端是空的！請先輸入資料並點擊「上傳雲端」！");
-        }
-      })
-      .catch(err => {
-        alert("💥 下載失敗！請確認 GAS 網址無誤，且有給予「Anyone」存取權限。");
-      })
-      .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        lucide.createIcons();
-      });
+      if (tabId === 'map') {
+        playCarHorn();
+      }
     }
 
-    // ==================== 2. 成員管理模組 ====================
+    // ==================== 成員與分平攤計算管理 ====================
     function renderMembers() {
       const listEl = document.getElementById('membersList');
       const payerSelect = document.getElementById('expPayer');
+      if (!listEl || !payerSelect) return;
       listEl.innerHTML = '';
       payerSelect.innerHTML = '';
 
@@ -1150,12 +1083,10 @@ function doPost(e) {
         const isBday = (m === 'Chris' || m === 'Steve') ? ' 🎂' : '';
         const div = document.createElement('div');
         div.className = "flex items-center justify-between p-2.5 bg-[#fcf5ec] border border-[#8b5e3c]/30 rounded-lg text-xs font-black shadow-sm transition-all";
-        div.innerHTML = `
-          <span class="text-[#3e2723]">👤 ${m}${isBday}</span>
-          <button onclick="removeMember('${m}')" class="text-rose-700 hover:text-rose-900 transition-colors p-1" title="踢出探險隊">
-            <i data-lucide="trash-2" class="w-4 h-4"></i>
-          </button>
-        `;
+        div.innerHTML = '<span>👤 ' + m + isBday + '</span>' +
+          '<button onclick="removeMember(\'' + m + '\')" class="text-rose-700 hover:text-rose-900 transition-colors p-1" title="踢出探險隊">' +
+            '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+          '</button>';
         listEl.appendChild(div);
 
         const opt = document.createElement('option');
@@ -1165,10 +1096,12 @@ function doPost(e) {
       });
 
       const warning = document.getElementById('memberWarning');
-      if (members.length <= 1) {
-        warning.classList.remove('hidden');
-      } else {
-        warning.classList.add('hidden');
+      if (warning) {
+        if (members.length <= 1) {
+          warning.classList.remove('hidden');
+        } else {
+          warning.classList.add('hidden');
+        }
       }
 
       lucide.createIcons();
@@ -1188,6 +1121,7 @@ function doPost(e) {
       renderMembers();
       recalculateAll();
       playCoinSound();
+      triggerAutoSave();
     }
 
     function removeMember(name) {
@@ -1195,38 +1129,39 @@ function doPost(e) {
       members = members.filter(m => m !== name);
       renderMembers();
       recalculateAll();
+      triggerAutoSave();
     }
 
-    // ==================== 3. 帳目管理與最小清算演算法 ====================
+    // ==================== 帳目管理與最小清算演算法 ====================
     function renderExpenses() {
       const listEl = document.getElementById('expensesHistoryList');
+      if (!listEl) return;
       listEl.innerHTML = '';
 
       expenses.forEach(exp => {
         const div = document.createElement('div');
         div.className = "group flex items-center justify-between p-4 bg-[#fdfaf3] hover:bg-[#f3e9dc] border border-[#8b5e3c]/20 rounded-xl transition-all hover:shadow-md";
-        div.innerHTML = `
-          <div class="space-y-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-extrabold text-[#3e2723] text-sm">${exp.title}</span>
-              <span class="bg-[#8b5e3c]/10 text-[#8b5e3c] text-[10px] font-black px-1.5 py-0.5 rounded border border-[#8b5e3c]/20">${exp.category}</span>
-            </div>
-            <div class="text-[10px] text-stone-500 font-bold flex items-center gap-3">
-              <span>📅 日期：${exp.date}</span>
-              <span>👤 墊款人：<strong>${exp.payer}</strong></span>
-            </div>
-          </div>
-          <div class="flex items-center gap-4">
-            <span class="font-black text-base text-[#5d4037]">$${exp.amount.toFixed(2)}</span>
-            <button onclick="deleteExpense(${exp.id})" class="text-stone-400 hover:text-rose-700 transition-colors p-1" title="刪除此帳目">
-              <i data-lucide="trash-2" class="w-4 h-4"></i>
-            </button>
-          </div>
-        `;
+        div.innerHTML = '<div class="space-y-1">' +
+            '<div class="flex items-center gap-2 flex-wrap">' +
+              '<span class="font-extrabold text-[#3e2723] text-sm">' + exp.title + '</span>' +
+              '<span class="bg-[#8b5e3c]/10 text-[#8b5e3c] text-[10px] font-black px-1.5 py-0.5 rounded border border-[#8b5e3c]/20">' + exp.category + '</span>' +
+            '</div>' +
+            '<div class="text-[10px] text-stone-500 font-bold flex items-center gap-3">' +
+              '<span>📅 日期：' + exp.date + '</span>' +
+              '<span>👤 墊款人：<strong>' + exp.payer + '</strong></span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="flex items-center gap-4">' +
+            '<span class="font-black text-base text-[#5d4037]">$' + exp.amount.toFixed(2) + '</span>' +
+            '<button onclick="deleteExpense(' + exp.id + ')" class="text-stone-400 hover:text-rose-700 transition-colors p-1" title="刪除此帳目">' +
+              '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
+            '</button>' +
+          '</div>';
         listEl.appendChild(div);
       });
 
-      document.getElementById('expenseCount').textContent = `${expenses.length} 筆`;
+      const countEl = document.getElementById('expenseCount');
+      if (countEl) countEl.textContent = expenses.length + " 筆";
       lucide.createIcons();
     }
 
@@ -1242,13 +1177,17 @@ function doPost(e) {
       generateCoins(15);
       
       const overlay = document.getElementById('stampOverlay');
-      overlay.classList.remove('hidden');
-      overlay.classList.add('stamp-active');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('stamp-active');
+      }
       playStampSound();
 
       setTimeout(() => {
-        overlay.classList.remove('stamp-active');
-        overlay.classList.add('hidden');
+        if (overlay) {
+          overlay.classList.remove('stamp-active');
+          overlay.classList.add('hidden');
+        }
       }, 950);
 
       const dayOffset = Math.floor(Math.random() * 12) + 23;
@@ -1258,7 +1197,7 @@ function doPost(e) {
         amount,
         payer,
         category,
-        date: `05/${dayOffset}`
+        date: "05/" + dayOffset
       };
 
       expenses.unshift(newExp);
@@ -1267,11 +1206,13 @@ function doPost(e) {
       document.getElementById('expAmount').value = '';
 
       recalculateAll();
+      triggerAutoSave();
     }
 
     function deleteExpense(id) {
       expenses = expenses.filter(exp => exp.id !== id);
       recalculateAll();
+      triggerAutoSave();
     }
 
     function recalculateAll() {
@@ -1280,9 +1221,13 @@ function doPost(e) {
       const total = expenses.reduce((sum, e) => sum + e.amount, 0);
       const perPerson = members.length > 0 ? total / members.length : 0;
 
-      document.getElementById('totalExpensesDisplay').textContent = `$${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      document.getElementById('avgExpensesDisplay').textContent = `$${perPerson.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-      document.getElementById('averageLabel').textContent = `⚖️ 每人應平攤 (${members.length} 人)`;
+      const totalEl = document.getElementById('totalExpensesDisplay');
+      const avgEl = document.getElementById('avgExpensesDisplay');
+      const avgLabelEl = document.getElementById('averageLabel');
+      
+      if (totalEl) totalEl.textContent = "$" + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (avgEl) avgEl.textContent = "$" + perPerson.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      if (avgLabelEl) avgLabelEl.textContent = "⚖️ 每人應平攤 (" + members.length + " 人)";
 
       const paidMap = {};
       members.forEach(m => paidMap[m] = 0);
@@ -1293,6 +1238,7 @@ function doPost(e) {
       });
 
       const balSheet = document.getElementById('balanceSheet');
+      if (!balSheet) return;
       balSheet.innerHTML = '';
 
       const balances = members.map(m => {
@@ -1307,20 +1253,18 @@ function doPost(e) {
         
         let tag = '';
         if (b.net >= 0.01) {
-          tag = `<span class="text-emerald-800 bg-emerald-100 font-black px-2 py-0.5 rounded text-[10px]">收 $${b.net.toFixed(1)}</span>`;
+          tag = '<span class="text-emerald-800 bg-emerald-100 font-black px-2 py-0.5 rounded text-[10px]">收 $' + b.net.toFixed(1) + '</span>';
         } else if (b.net <= -0.01) {
-          tag = `<span class="text-rose-800 bg-rose-100 font-black px-2 py-0.5 rounded text-[10px]">付 $${Math.abs(b.net).toFixed(1)}</span>`;
+          tag = '<span class="text-rose-800 bg-rose-100 font-black px-2 py-0.5 rounded text-[10px]">付 $' + Math.abs(b.net).toFixed(1) + '</span>';
         } else {
-          tag = `<span class="text-stone-500 bg-stone-100 font-black px-2 py-0.5 rounded text-[10px]">已平</span>`;
+          tag = '<span class="text-stone-500 bg-stone-100 font-black px-2 py-0.5 rounded text-[10px]">已平</span>';
         }
 
-        div.innerHTML = `
-          <div class="font-extrabold text-[#3e2723]">${b.name}</div>
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] text-stone-500 font-bold">已付 $${b.paid.toFixed(1)}</span>
-            ${tag}
-          </div>
-        `;
+        div.innerHTML = '<div class="font-extrabold text-[#3e2723]">' + b.name + '</div>' +
+          '<div class="flex items-center gap-2">' +
+            '<span class="text-[10px] text-stone-500 font-bold">已付 $' + b.paid.toFixed(1) + '</span>' +
+            tag +
+          '</div>';
         balSheet.appendChild(div);
       });
 
@@ -1334,6 +1278,7 @@ function doPost(e) {
       let creditors = balances.filter(b => b.net > 0.01).sort((a, b) => b.net - a.net);
 
       const container = document.getElementById('optimizedDebtsList');
+      if (!container) return;
       container.innerHTML = '';
       optimizedDebtsToShare = [];
 
@@ -1362,30 +1307,26 @@ function doPost(e) {
       }
 
       if (optimizedDebtsToShare.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-8 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs">
-            <span class="text-2xl block mb-1">🎉</span>
-            <p class="font-black text-emerald-950">大家出資完美平衡！</p>
-            <p class="text-[10px] text-emerald-800 mt-0.5">無人需要額外轉帳付款，分贓大圓滿！</p>
-          </div>
-        `;
+        container.innerHTML = '<div class="text-center py-8 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs">' +
+            '<span class="text-2xl block mb-1">🎉</span>' +
+            '<p class="font-black text-emerald-950">大家出資完美平衡！</p>' +
+            '<p class="text-[10px] text-emerald-800 mt-0.5">無人需要額外轉帳付款，分贓大圓滿！</p>' +
+          '</div>';
         return;
       }
 
       optimizedDebtsToShare.forEach((debt, index) => {
         const div = document.createElement('div');
         div.className = "bg-white/80 border border-amber-800/20 p-3 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-all";
-        div.innerHTML = `
-          <div class="flex items-center gap-2 text-xs font-bold text-stone-800">
-            <span class="w-5 h-5 bg-amber-800 text-amber-50 rounded-full flex items-center justify-center text-[10px] font-black">${index+1}</span>
-            <div>
-              <span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">${debt.from}</span>
-              <span class="mx-1 text-stone-400">➔ 支付金幣給 ➔</span>
-              <span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">${debt.to}</span>
-            </div>
-          </div>
-          <span class="font-black text-xs text-[#3e2723]">$${debt.amount.toFixed(2)}</span>
-        `;
+        div.innerHTML = '<div class="flex items-center gap-2 text-xs font-bold text-stone-800">' +
+            '<span class="w-5 h-5 bg-amber-800 text-amber-50 rounded-full flex items-center justify-center text-[10px] font-black">' + (index+1) + '</span>' +
+            '<div>' +
+              '<span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">' + debt.from + '</span>' +
+              '<span class="mx-1 text-stone-400">➔ 支付金幣給 ➔</span>' +
+              '<span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">' + debt.to + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<span class="font-black text-xs text-[#3e2723]">$' + debt.amount.toFixed(2) + '</span>';
         container.appendChild(div);
       });
     }
@@ -1423,9 +1364,55 @@ function doPost(e) {
       document.body.removeChild(textarea);
     }
 
-    // ==================== 4. 14天行程 (Timeline) 模組 ====================
+    function exportData() {
+      const payload = {
+        expenses,
+        members,
+        foodItems,
+        prepItems
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
+      const dlAnchor = document.createElement('a');
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", "美西大自駕_冒險黃金帳卷.json");
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+    }
+
+    function importData(e) {
+      const reader = new FileReader();
+      if (e.target.files && e.target.files[0]) {
+        reader.readAsText(e.target.files[0], "UTF-8");
+        reader.onload = (event) => {
+          try {
+            const parsed = JSON.parse(event.target.result);
+            if (parsed.expenses && parsed.members) {
+              expenses = parsed.expenses;
+              members = parsed.members;
+              if (parsed.foodItems) foodItems = parsed.foodItems;
+              if (parsed.prepItems) prepItems = parsed.prepItems;
+
+              generateCoins(30);
+              recalculateAll();
+              renderMembers();
+              renderFood();
+              renderPrep();
+              alert("📜 羊皮大卷軸導入大成功！歷史財富已完美同步！");
+            } else {
+              alert("格式不對，這是一張假的秘寶圖！");
+            }
+          } catch (err) {
+            alert("讀取失敗，羊皮紙受潮了！");
+          }
+        };
+      }
+    }
+
+    // ==================== 3. 14天行程 (Timeline) 模組 ====================
     function renderDayGrid() {
       const container = document.getElementById('dayGridSelector');
+      if (!container) return;
       container.innerHTML = '';
 
       itinerary.forEach((day, idx) => {
@@ -1457,6 +1444,7 @@ function doPost(e) {
 
       const day = itinerary[index];
       const detailEl = document.getElementById('dayDetailCard');
+      if (!detailEl) return;
       
       const bdayBanner = day.birthday ? `
         <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-3 animate-pulse">
@@ -1494,12 +1482,12 @@ function doPost(e) {
             <div>
               <h3 class="text-xs font-bold text-amber-900 uppercase tracking-widest mb-3.5">⚔️ 今日攻略景點 (Highlights)</h3>
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                ${day.highlights.map(h => `
-                  <div class="bg-amber-50/50 border border-[#8b5e3c]/20 p-3 rounded-lg flex items-start gap-2">
-                    <span class="text-emerald-700 font-extrabold">✓</span>
-                    <span class="text-xs font-bold text-[#3e2723]">${h}</span>
-                  </div>
-                `).join('')}
+                ${day.highlights.map(function(h) {
+                  return '<div class="bg-amber-50/50 border border-[#8b5e3c]/20 p-3 rounded-lg flex items-start gap-2">' +
+                         '<span class="text-emerald-700 font-extrabold">✓</span>' +
+                         '<span class="text-xs font-bold text-[#3e2723]">' + h + '</span>' +
+                         '</div>';
+                }).join('')}
               </div>
             </div>
 
@@ -1522,7 +1510,9 @@ function doPost(e) {
       playCarHorn();
       
       const car = document.getElementById('mapCarGroup');
-      car.setAttribute('transform', `translate(${x}, ${y}) scale(1.5)`);
+      if (car) {
+        car.setAttribute('transform', `translate(${x}, ${y}) scale(1.5)`);
+      }
 
       setTimeout(() => {
         switchTab('timeline');
@@ -1534,30 +1524,31 @@ function doPost(e) {
     // ==================== 6. 補給美食打卡 (Food) 模組 ====================
     function renderFood() {
       const container = document.getElementById('foodGrid');
+      if (!container) return;
       container.innerHTML = '';
 
       foodItems.forEach(item => {
         const div = document.createElement('div');
-        div.onclick = () => toggleFood(item.id);
+        div.onclick = function() { toggleFood(item.id); };
         
         const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300 shadow-sm' : 'bg-white border-[#8b5e3c]/30 hover:border-[#8b5e3c]';
         const checkboxClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-[#fbfbf9]';
 
-        div.className = `p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${activeClass}`;
-        div.innerHTML = `
-          <div class="mt-1 shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ${checkboxClass}">
-            ${item.checked ? '<span class="text-[10px] font-black">✓</span>' : ''}
-          </div>
-          <div>
-            <h3 class="font-black text-sm ${item.checked ? 'text-emerald-950 line-through opacity-70' : 'text-slate-800'}">${item.name}</h3>
-            <p class="text-[10px] text-stone-500 mt-1 leading-relaxed">${item.desc}</p>
-          </div>
-        `;
+        div.className = "p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 " + activeClass;
+        div.innerHTML = 
+          '<div class="mt-1 shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ' + checkboxClass + '">' +
+            (item.checked ? '<span class="text-[10px] font-black">✓</span>' : '') +
+          '</div>' +
+          '<div>' +
+            '<h3 class="font-black text-sm ' + (item.checked ? 'text-emerald-950 line-through opacity-70' : 'text-slate-800') + '">' + item.name + '</h3>' +
+            '<p class="text-[10px] text-stone-500 mt-1 leading-relaxed">' + item.desc + '</p>' +
+          '</div>';
         container.appendChild(div);
       });
 
       const checkedCount = foodItems.filter(f => f.checked).length;
-      document.getElementById('foodProgressBadge').textContent = `已解鎖補給: ${checkedCount} / ${foodItems.length}`;
+      const progressBadge = document.getElementById('foodProgressBadge');
+      if (progressBadge) progressBadge.textContent = "解鎖進度: " + checkedCount + " / " + foodItems.length;
     }
 
     function toggleFood(id) {
@@ -1573,11 +1564,13 @@ function doPost(e) {
         return f;
       });
       renderFood();
+      triggerAutoSave();
     }
 
     // ==================== 7. 備戰行李 (Prep) 模組 ====================
     function renderPrep() {
       const container = document.getElementById('prepItemsGrid');
+      if (!container) return;
       container.innerHTML = '';
 
       const categories = {
@@ -1592,25 +1585,24 @@ function doPost(e) {
         
         const section = document.createElement('div');
         section.className = "space-y-2";
-        section.innerHTML = `<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">${categories[cat]}</h4>`;
+        section.innerHTML = '<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">' + categories[cat] + '</h4>';
         
         const grid = document.createElement('div');
         grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
 
         catItems.forEach(item => {
           const itemDiv = document.createElement('div');
-          itemDiv.onclick = () => togglePrep(item.id);
+          itemDiv.onclick = function() { togglePrep(item.id); };
           
           const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-stone-200 hover:border-[#8b5e3c]' ;
           const checkClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-white';
 
-          itemDiv.className = `p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 ${activeClass}`;
-          itemDiv.innerHTML = `
-            <div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ${checkClass}">
-              ${item.checked ? '<span class="text-[9px] font-black">✓</span>' : ''}
-            </div>
-            <span class="text-xs font-bold ${item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]'}">${item.text}</span>
-          `;
+          itemDiv.className = "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 " + activeClass;
+          itemDiv.innerHTML = 
+            '<div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ' + checkClass + '">' +
+              (item.checked ? '<span class="text-[9px] font-black">✓</span>' : '') +
+            '</div>' +
+            '<span class="text-xs font-bold ' + (item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]') + '">' + item.text + '</span>';
           grid.appendChild(itemDiv);
         });
 
@@ -1619,7 +1611,8 @@ function doPost(e) {
       });
 
       const packedCount = prepItems.filter(p => p.checked).length;
-      document.getElementById('packProgressBadge').textContent = `已裝載武器：${packedCount} / ${prepItems.length}`;
+      const progressBadge = document.getElementById('packProgressBadge');
+      if (progressBadge) progressBadge.textContent = "已裝箱：" + packedCount + " / " + prepItems.length;
     }
 
     function togglePrep(id) {
@@ -1634,21 +1627,24 @@ function doPost(e) {
         return p;
       });
       renderPrep();
+      triggerAutoSave();
     }
 
     // ==================== 8. 冒險生存工具箱 (Toolkit) ====================
     function convertTime() {
-      const twTime = parseInt(document.getElementById('tpeTimeSlider').value);
-      document.getElementById('tpeTimeDisplay').textContent = `${twTime}:00`;
+      const slider = document.getElementById('tpeTimeSlider');
+      if (!slider) return;
+      const twTime = parseInt(slider.value);
+      document.getElementById('tpeTimeDisplay').textContent = twTime + ":00";
 
       const pdtRaw = twTime - 15;
       const pdtTime = (pdtRaw + 24) % 24;
-      document.getElementById('pdtTimeDisplay').textContent = `${pdtTime}:00`;
+      document.getElementById('pdtTimeDisplay').textContent = pdtTime + ":00";
       document.getElementById('pdtDayLabel').textContent = pdtRaw < 0 ? '前一天' : '當天';
 
       const mstRaw = twTime - 15;
       const mstTime = (mstRaw + 24) % 24;
-      document.getElementById('mstTimeDisplay').textContent = `${mstTime}:00`;
+      document.getElementById('mstTimeDisplay').textContent = mstTime + ":00";
       document.getElementById('mstDayLabel').textContent = mstRaw < 0 ? '前一天' : '當天';
     }
 
@@ -1667,6 +1663,126 @@ function doPost(e) {
         document.getElementById('mileVal').value = (km / 1.60934).toFixed(1);
       }
     }
+
+    // ==================== 雲端 GAS 傳送 / 接收自動同步機制 ====================
+    let autoSaveTimer = null;
+
+    // 自動讀取函數 (網頁開啟時自動觸發)
+    function autoLoadFromGas() {
+      const statusText = document.getElementById('syncStatusText');
+      const indicator = document.getElementById('syncStatusIndicator');
+      
+      if (!GAS_URL || GAS_URL.trim() === "") {
+        if (statusText) statusText.textContent = "本地模式 (未連結雲端)";
+        if (indicator) {
+          indicator.className = "w-2 h-2 rounded-full bg-stone-500";
+        }
+        return;
+      }
+
+      if (statusText) statusText.textContent = "雲端同步中...";
+      if (indicator) {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+      }
+
+      fetch(GAS_URL)
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(data => {
+        if (data && data.members) {
+          expenses = data.expenses || [];
+          members = data.members;
+          if (data.foodItems) foodItems = data.foodItems;
+          if (data.prepItems) prepItems = data.prepItems;
+
+          generateCoins(15);
+          recalculateAll();
+          renderMembers();
+          renderFood();
+          renderPrep();
+          
+          if (statusText) statusText.textContent = "連線成功，數據已同步";
+          if (indicator) {
+            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
+          }
+        } else {
+          if (statusText) statusText.textContent = "已連線 (新試算表)";
+          if (indicator) {
+            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
+          }
+        }
+      })
+      .catch(err => {
+        if (statusText) statusText.textContent = "同步失敗，請確認權限";
+        if (indicator) {
+          indicator.className = "w-2 h-2 rounded-full bg-rose-500";
+        }
+      });
+    }
+
+    // 自動背景存檔函數 (任何資料變更時自動觸發)
+    function triggerAutoSave() {
+      if (!GAS_URL || GAS_URL.trim() === "") return;
+
+      const statusText = document.getElementById('syncStatusText');
+      const indicator = document.getElementById('syncStatusIndicator');
+
+      if (statusText) statusText.textContent = "自動同步中...";
+      if (indicator) {
+        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+      }
+
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+
+      // 防抖動，延遲 1.5 秒執行，避免連續打勾造成重複寫入
+      autoSaveTimer = setTimeout(() => {
+        const payload = {
+          expenses,
+          members,
+          foodItems,
+          prepItems
+        };
+
+        fetch(GAS_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(() => {
+          if (statusText) statusText.textContent = "進度已自動保存至雲端";
+          if (indicator) {
+            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
+          }
+        })
+        .catch(err => {
+          if (statusText) statusText.textContent = "雲端同步失敗";
+          if (indicator) {
+            indicator.className = "w-2 h-2 rounded-full bg-rose-500";
+          }
+        });
+      }, 1500);
+    }
+
+    // 網頁開啟時的自動同步
+    window.addEventListener('DOMContentLoaded', () => {
+      // 1. 本地優先渲染 (這樣不論有沒有設定 GAS_URL，大卡與清單都會立刻顯示、不留空白！)
+      renderMembers();
+      recalculateAll();
+      renderDayGrid();
+      selectDay(2); // 預設 Day 3 Chris生日
+      renderFood();
+      renderPrep();
+      convertTime();
+      lucide.createIcons();
+
+      // 2. 隨後在背景自動對接雲端（若有設定，將會自動拉取雲端數據進行覆蓋更新）
+      autoLoadFromGas();
+    });
   </script>
 </body>
 </html>
