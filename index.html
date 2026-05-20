@@ -1721,7 +1721,7 @@ function renderPrep() {
       document.getElementById('pdtTimeDisplay').textContent = pdtTime + ":00";
       document.getElementById('pdtDayLabel').textContent = pdtRaw < 0 ? '前一天' : '當天';
 
-      const mstRaw = twTime - 15;
+      const mstRaw = twTime - 14;
       const mstTime = (mstRaw + 24) % 24;
       document.getElementById('mstTimeDisplay').textContent = mstTime + ":00";
       document.getElementById('mstDayLabel').textContent = mstRaw < 0 ? '前一天' : '當天';
