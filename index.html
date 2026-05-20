@@ -985,18 +985,36 @@ function doPost(e) {
       { id: 'roadbbq', name: '美式公路煙燻烤肉 BBQ', desc: '美西公路小鎮必吃！超厚手撕豬肉與手切牛胸肉。', checked: false }
     ];
 
-    let prepItems = [
-      { id: 'passport', category: 'documents', text: '護照正本（效期需在 6 個月以上）', checked: false },
-      { id: 'esta', category: 'documents', text: 'ESTA 電子簽證許可紙本與電子存檔', checked: false },
-      { id: 'license', category: 'documents', text: '自駕神主牌：台灣駕照 + 國際駕照', checked: false },
-      { id: 'creditcard', category: 'documents', text: '高海外刷卡回饋信用卡 + 少量美鈔', checked: false },
-      { id: 'sim', category: 'tech', text: '美國行動上網 SIM 卡 / eSIM 預先開通', checked: false },
-      { id: 'adapter', category: 'tech', text: '多國轉接插頭與多孔延長線（Airbnb必備）', checked: false },
-      { id: 'powerbank', category: 'tech', text: '行動電源（登機隨身，不可放託運行李）', checked: false },
-      { id: 'liquid', category: 'luggage', text: '隨身登機液體：每瓶限 100ml 內且需裝入透明袋', checked: false },
-      { id: 'jacket', category: 'clothing', text: '防風防風保暖外套（大峽谷與舊金山夜間溫差極大）', checked: false },
-      { id: 'sunglasses', category: 'clothing', text: '太陽眼鏡與防曬乳（約書亞樹及羚羊谷陽光強烈）', checked: false },
-    ];
+// ==================== 1. 請替換原有的 prepItems 數據陣列 ====================
+let prepItems = [
+  // 隨身小包
+  { id: 'passport', category: 'bag', text: '護照正本 (隨身小包：確認效期需在 6 個月以上)', checked: false },
+  { id: 'license_double', category: 'bag', text: '自駕雙證：台灣駕照 + 國際駕照 (隨身小包：自駕必備)', checked: false },
+  { id: 'credit_card', category: 'bag', text: '高海外刷卡回饋信用卡 (隨身小包：建議帶 2~3 張備用)', checked: false },
+  { id: 'usd_cash', category: 'bag', text: '美金現鈔 (少量) (隨身小包：給小費或與旅伴分攤現鈔用)', checked: false },
+  { id: 'phone_battery', category: 'bag', text: '手機 + 行動電源 (隨身小包：行動電源不可託運，必須隨身)', checked: false },
+  { id: 'pen', category: 'bag', text: '原子筆 (隨身小包：過海關或填寫飛機申報單必備)', checked: false },
+
+  // 登機/手提箱
+  { id: 'esta_paper', category: 'carry', text: 'ESTA 授權許可紙本憑證 (登機/手提箱：防網路失聯備查)', checked: false },
+  { id: 'flight_hotel_voucher', category: 'carry', text: '機票 & 住宿確認憑證 (登機/手提箱：出示給海關看)', checked: false },
+  { id: 'universal_ticket', category: 'carry', text: '環球影城確認憑證 (登機/手提箱：電子或紙本存好)', checked: false },
+  { id: 'alcatraz_ticket', category: 'carry', text: '惡魔島船票確認憑證 (登機/手提箱：監獄探秘預約)', checked: false },
+  { id: 'antelope_ticket', category: 'carry', text: '羚羊谷導覽確認憑證 (登機/手提箱：熱門印地安導覽)', checked: false },
+  { id: 'liquids_100ml', category: 'carry', text: '100ml內液體透明密封袋 (登機/手提箱：TSA安檢隨身液體限制)', checked: false },
+  { id: 'electronics_charger', category: 'carry', text: '相機/平板/電腦及充電線 (登機/手提箱：貴重電器隨身帶)', checked: false },
+  { id: 'personal_med', category: 'carry', text: '個人急需藥品 & 隱形眼鏡 (登機/手提箱：高空飛行急用防乾)', checked: false },
+
+  // 大託運箱
+  { id: 'clothes_jacket', category: 'checked', text: '換洗衣物 & 保暖防風外套 (大託運箱：舊金山/大峽谷溫差極大)', checked: false },
+  { id: 'toothbrush_towel', category: 'checked', text: '牙刷、牙膏、毛巾 (大託運箱：美國多數 Airbnb 不一定提供)', checked: false },
+  { id: 'slippers', category: 'checked', text: '室內 / 戶外拖鞋 (大託運箱：美式飯店多不提供一次性拖鞋)', checked: false },
+  { id: 'sun_screen', category: 'checked', text: '防曬乳 & 太陽眼鏡 (大託運箱：大峽谷、約書亞樹沙漠曝曬高溫)', checked: false },
+  { id: 'med_kit', category: 'checked', text: '感冒藥、腸胃藥、暈車藥 (大託運箱：常備外傷與急救藥物)', checked: false },
+  { id: 'umbrella_raincoat', category: 'checked', text: '摺疊雨傘 / 雨衣 (大託運箱：防範氣候突然轉變)', checked: false },
+  { id: 'tw_ramen', category: 'checked', text: '台灣泡麵 & 零食乾糧 (大託運箱：美西荒野宵夜與思鄉救星！)', checked: false }
+];
+
 
     // 14天詳細日程
     const itinerary = [
@@ -1567,53 +1585,53 @@ function doPost(e) {
       triggerAutoSave();
     }
 
-    // ==================== 7. 備戰行李 (Prep) 模組 ====================
-    function renderPrep() {
-      const container = document.getElementById('prepItemsGrid');
-      if (!container) return;
-      container.innerHTML = '';
+    // ==================== 2. 請替換原有的 renderPrep() 函數 ====================
+function renderPrep() {
+  const container = document.getElementById('prepItemsGrid');
+  if (!container) return;
+  container.innerHTML = '';
 
-      const categories = {
-        documents: '🛡️ 冒險者關鍵契書與金流',
-        tech: '🔌 3C 電子充能裝備',
-        luggage: '📦 行李大包託運規範',
-        clothing: '🧥 避暑防寒防風披風'
-      };
+  // 更新為與您手冊圖片 100% 吻合的 3 大分類
+  const categories = {
+    bag: '👜 隨身小包 (Personal Item)',
+    carry: '🎒 登機 / 手提箱 (Carry-on)',
+    checked: '🧳 大託運箱 (Checked Luggage)'
+  };
 
-      Object.keys(categories).forEach(cat => {
-        const catItems = prepItems.filter(p => p.category === cat);
-        
-        const section = document.createElement('div');
-        section.className = "space-y-2";
-        section.innerHTML = '<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">' + categories[cat] + '</h4>';
-        
-        const grid = document.createElement('div');
-        grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
+  Object.keys(categories).forEach(cat => {
+    const catItems = prepItems.filter(p => p.category === cat);
+    
+    const section = document.createElement('div');
+    section.className = "space-y-2";
+    section.innerHTML = '<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">' + categories[cat] + '</h4>';
+    
+    const grid = document.createElement('div');
+    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
 
-        catItems.forEach(item => {
-          const itemDiv = document.createElement('div');
-          itemDiv.onclick = function() { togglePrep(item.id); };
-          
-          const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-stone-200 hover:border-[#8b5e3c]' ;
-          const checkClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-white';
+    catItems.forEach(item => {
+      const itemDiv = document.createElement('div');
+      itemDiv.onclick = function() { togglePrep(item.id); };
+      
+      const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-stone-200 hover:border-[#8b5e3c]' ;
+      const checkClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-white';
 
-          itemDiv.className = "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 " + activeClass;
-          itemDiv.innerHTML = 
-            '<div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ' + checkClass + '">' +
-              (item.checked ? '<span class="text-[9px] font-black">✓</span>' : '') +
-            '</div>' +
-            '<span class="text-xs font-bold ' + (item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]') + '">' + item.text + '</span>';
-          grid.appendChild(itemDiv);
-        });
+      itemDiv.className = "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 " + activeClass;
+      itemDiv.innerHTML = 
+        '<div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ' + checkClass + '">' +
+          (item.checked ? '<span class="text-[9px] font-black">✓</span>' : '') +
+        '</div>' +
+        '<span class="text-xs font-bold ' + (item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]') + '">' + item.text + '</span>';
+      grid.appendChild(itemDiv);
+    });
 
-        section.appendChild(grid);
-        container.appendChild(section);
-      });
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
 
-      const packedCount = prepItems.filter(p => p.checked).length;
-      const progressBadge = document.getElementById('packProgressBadge');
-      if (progressBadge) progressBadge.textContent = "已裝箱：" + packedCount + " / " + prepItems.length;
-    }
+  const packedCount = prepItems.filter(p => p.checked).length;
+  const progressBadge = document.getElementById('packProgressBadge');
+  if (progressBadge) progressBadge.textContent = "已裝箱：" + packedCount + " / " + prepItems.length;
+}
 
     function togglePrep(id) {
       prepItems = prepItems.map(p => {
