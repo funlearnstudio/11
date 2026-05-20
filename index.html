@@ -986,6 +986,8 @@ function doPost(e) {
     ];
 
 // ==================== 1. 請替換原有的 prepItems 數據陣列 ====================
+// ==================== 1. 請替換原有的 prepItems 數據陣列 ====================
+// 已擴充「禁止攜帶之危險禁忌品」以及「隨身液體限制規範」
 let prepItems = [
   // 隨身小包
   { id: 'passport', category: 'bag', text: '護照正本 (隨身小包：確認效期需在 6 個月以上)', checked: false },
@@ -1012,7 +1014,13 @@ let prepItems = [
   { id: 'sun_screen', category: 'checked', text: '防曬乳 & 太陽眼鏡 (大託運箱：大峽谷、約書亞樹沙漠曝曬高溫)', checked: false },
   { id: 'med_kit', category: 'checked', text: '感冒藥、腸胃藥、暈車藥 (大託運箱：常備外傷與急救藥物)', checked: false },
   { id: 'umbrella_raincoat', category: 'checked', text: '摺疊雨傘 / 雨衣 (大託運箱：防範氣候突然轉變)', checked: false },
-  { id: 'tw_ramen', category: 'checked', text: '台灣泡麵 & 零食乾糧 (大託運箱：美西荒野宵夜與思鄉救星！)', checked: false }
+  { id: 'tw_ramen', category: 'checked', text: '台灣泡麵 & 零食乾糧 (大託運箱：美西荒野宵夜與思鄉救星！)', checked: false },
+
+  // 絕對不可攜帶之危險禁忌品（TSA 嚴格禁止）
+  { id: 'no_meat_fresh', category: 'forbidden', text: '肉製品、生鮮蔬果、植物種子 (絕對禁止：含肉鬆、肉乾、生肉、水果、泥土)', checked: false },
+  { id: 'no_match_lighters', category: 'forbidden', text: '防風/藍焰打火機、防狼噴霧 (絕對禁止：海關安檢直接沒收與重罰)', checked: false },
+  { id: 'no_loose_lithium', category: 'forbidden', text: '託運未拆包裝/散裝鋰電池 (絕對禁止：凡鋰電池、行動電源一律不可放入大託運箱)', checked: false },
+  { id: 'no_cbd_marijuana', category: 'forbidden', text: '含大麻/CBD成分之任何製品 (絕對禁止：美國聯邦法與海關入境處仍屬違法禁藥)', checked: false }
 ];
 
 
@@ -1586,24 +1594,52 @@ let prepItems = [
     }
 
     // ==================== 2. 請替換原有的 renderPrep() 函數 ====================
+// ==================== 2. 請替換原有的 renderPrep() 函數 ====================
 function renderPrep() {
   const container = document.getElementById('prepItemsGrid');
   if (!container) return;
   container.innerHTML = '';
 
-  // 更新為與您手冊圖片 100% 吻合的 3 大分類
+  // 更新為與手冊完美吻合的 3 大行李分類 + 1 個紅牌警示禁品區
   const categories = {
     bag: '👜 隨身小包 (Personal Item)',
     carry: '🎒 登機 / 手提箱 (Carry-on)',
-    checked: '🧳 大託運箱 (Checked Luggage)'
+    checked: '🧳 大託運箱 (Checked Luggage)',
+    forbidden: '🚨 絕對不可攜帶之禁忌品 (Forbidden Items)'
   };
+
+  // 額外置頂顯示隨身行李液體（TSA 3-1-1）一體規定的「羊皮紙公告」
+  const noticeDiv = document.createElement('div');
+  noticeDiv.className = "mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-xs space-y-2 text-amber-950 font-sans shadow-inner";
+  noticeDiv.innerHTML = 
+    '<h5 class="font-black text-amber-900 flex items-center gap-1.5 text-sm">' +
+      '<i data-lucide="shield-alert" class="w-4 h-4"></i> 隨身液體 TSA 3-1-1 一體嚴格規定' +
+    '</h5>' +
+    '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 italic font-bold text-amber-900/90 leading-relaxed">' +
+      '<div>' +
+        '<span class="block text-amber-950 font-black">1. 瓶罐限制 (3oz / 100ml)</span>' +
+        '所有隨身攜帶之液體、膠狀或噴霧類物品，單一容器容積不得超過 <strong>100 毫升 (ml)</strong>。' +
+      '</div>' +
+      '<div>' +
+        '<span class="block text-amber-950 font-black">2. 透明密封拉鍊袋 (1 Quart)</span>' +
+        '所有液體瓶罐必須「全數」裝入一個容量不超過 <strong>1 公升 (20x20cm)</strong> 且可重複密封的透明塑膠袋中。' +
+      '</div>' +
+      '<div>' +
+        '<span class="block text-amber-950 font-black">3. 每人限帶一袋 (1 Bag)</span>' +
+        '每位旅客僅限攜帶「一個」透明裝袋，於安檢時必須單獨從手提箱取出來放置於托盤中受檢。' +
+      '</div>' +
+    '</div>';
+  container.appendChild(noticeDiv);
 
   Object.keys(categories).forEach(cat => {
     const catItems = prepItems.filter(p => p.category === cat);
     
     const section = document.createElement('div');
-    section.className = "space-y-2";
-    section.innerHTML = '<h4 class="text-xs font-black text-[#8b5e3c] tracking-wider uppercase mb-1.5">' + categories[cat] + '</h4>';
+    section.className = "space-y-2 mb-4";
+    
+    // 如果是絕對禁止攜帶物品，給予紅色醒目標題
+    const titleColor = cat === 'forbidden' ? 'text-rose-700' : 'text-[#8b5e3c]';
+    section.innerHTML = '<h4 class="text-xs font-black tracking-wider uppercase mb-1.5 ' + titleColor + '">' + categories[cat] + '</h4>';
     
     const grid = document.createElement('div');
     grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
@@ -1612,15 +1648,41 @@ function renderPrep() {
       const itemDiv = document.createElement('div');
       itemDiv.onclick = function() { togglePrep(item.id); };
       
-      const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300' : 'bg-white border-stone-200 hover:border-[#8b5e3c]' ;
-      const checkClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-white';
+      // 禁止攜帶物品打勾後顯示紅色警戒色，其餘使用原本的翠綠色
+      let activeClass = '';
+      let checkClass = '';
+      
+      if (item.checked) {
+        if (cat === 'forbidden') {
+          activeClass = 'bg-rose-50 border-rose-300';
+          checkClass = 'bg-rose-700 border-rose-700 text-white';
+        } else {
+          activeClass = 'bg-emerald-50 border-emerald-300';
+          checkClass = 'bg-emerald-700 border-emerald-700 text-white';
+        }
+      } else {
+        activeClass = 'bg-white border-stone-200 hover:border-[#8b5e3c]';
+        checkClass = 'border-stone-300 bg-white';
+      }
 
       itemDiv.className = "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 " + activeClass;
+      
+      let textStyle = '';
+      if (item.checked) {
+        if (cat === 'forbidden') {
+          textStyle = 'text-rose-900/60 line-through';
+        } else {
+          textStyle = 'text-emerald-950/60 line-through';
+        }
+      } else {
+        textStyle = cat === 'forbidden' ? 'text-rose-900' : 'text-[#3e2723]';
+      }
+
       itemDiv.innerHTML = 
         '<div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ' + checkClass + '">' +
           (item.checked ? '<span class="text-[9px] font-black">✓</span>' : '') +
         '</div>' +
-        '<span class="text-xs font-bold ' + (item.checked ? 'text-emerald-950/60 line-through' : 'text-[#3e2723]') + '">' + item.text + '</span>';
+        '<span class="text-xs font-bold ' + textStyle + '">' + item.text + '</span>';
       grid.appendChild(itemDiv);
     });
 
@@ -1632,7 +1694,6 @@ function renderPrep() {
   const progressBadge = document.getElementById('packProgressBadge');
   if (progressBadge) progressBadge.textContent = "已裝箱：" + packedCount + " / " + prepItems.length;
 }
-
     function togglePrep(id) {
       prepItems = prepItems.map(p => {
         if (p.id === id) {
