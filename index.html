@@ -1,679 +1,825 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>像素大戰：1000x1000 雲端即時萬人爭霸賽 (r/place)</title>
-  <!-- 引入 Tailwind CSS CDN 與 Lucide 圖標 -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    /* 隱藏滾動條 */
-    body::-webkit-scrollbar {
-      display: none;
-    }
-    body {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row overflow-hidden select-none font-sans">
-
-  <!-- 左側控制面板 (桌面端) / 頂部控制面板 (行動端) -->
-  <aside class="w-full md:w-80 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-4 flex flex-col justify-between shrink-0 z-10 shadow-xl overflow-y-auto">
-    <div>
-      <!-- 標題與即時連線狀態 -->
-      <div class="flex items-center justify-between mb-3">
-        <div class="flex items-center gap-2">
-          <span class="flex h-3 w-3 relative">
-            <span id="pingRing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-            <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-          </span>
-          <h1 class="text-xl font-black tracking-wider text-cyan-400">r/place 雲端即時版</h1>
-        </div>
-        <span id="connectionStatus" class="text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-amber-400">連線中...</span>
-      </div>
-
-      <!-- 藝術家資訊與在線人數 -->
-      <div class="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 text-xs text-slate-400 mb-4 space-y-1">
-        <div class="flex justify-between">
-          <span>您的藝術家 ID:</span>
-          <span id="artistId" class="font-mono text-cyan-400 select-all">載入中...</span>
-        </div>
-        <div class="flex justify-between">
-          <span>當前地圖像素數:</span>
-          <span class="font-mono text-slate-300">1,000,000 (1K x 1K)</span>
-        </div>
-      </div>
-
-      <!-- 操作模式與工具 -->
-      <div class="space-y-3 mb-6">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">操作工具</span>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btnDrawMode" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500">
-            <i data-lucide="edit-3" class="w-4 h-4"></i> 著色模式
-          </button>
-          <button id="btnPanMode" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700">
-            <i data-lucide="grab" class="w-4 h-4"></i> 拖移模式
-          </button>
-        </div>
-        <p class="text-[11px] text-slate-500 text-center">💡 提示：按住 <kbd class="px-1 bg-slate-800 rounded text-slate-400">Space 空白鍵</kbd> 或滑鼠中鍵可快速拖移！</p>
-      </div>
-
-      <!-- 座標跳轉與定位 -->
-      <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 mb-6">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-slate-400">目前游標位置</span>
-          <span id="coordDisplay" class="text-xs text-cyan-400 font-mono">(500, 500)</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <input type="number" id="gotoX" placeholder="X (0-999)" min="0" max="999" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-xs text-white font-mono focus:outline-none focus:border-cyan-500">
-          <input type="number" id="gotoY" placeholder="Y (0-999)" min="0" max="999" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-xs text-white font-mono focus:outline-none focus:border-cyan-500">
-          <button id="btnGoto" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-slate-300 border border-slate-700 transition">
-            <i data-lucide="locate" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- 模擬 AI 社群繪製 (本地模擬，不影響雲端) -->
-      <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 mb-6">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold text-slate-400">本地 AI 靈感助手</span>
-          <label class="relative inline-flex items-center cursor-pointer">
-            <input type="checkbox" id="toggleAI" class="sr-only peer">
-            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
-          </label>
-        </div>
-        <p class="text-[11px] text-slate-500">開啟後，本地 AI 會在你的畫布視野內隨機繪製斑駁色彩，幫助激發靈感（此動作僅存在於你的瀏覽器，不寫入雲端數據）。</p>
-      </div>
-    </div>
-
-    <!-- 底部功能按鈕 -->
-    <div class="space-y-2 mt-4">
-      <button id="btnSave" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition border border-slate-700">
-        <i data-lucide="download" class="w-4 h-4"></i> 匯出 1000x1000 完整作品
-      </button>
-      <button id="btnResetView" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-400 text-xs transition">
-        重設視角至中心
-      </button>
-    </div>
-  </aside>
-
-  <!-- 右側主要畫布工作區 -->
-  <main class="flex-1 relative bg-slate-950 flex flex-col justify-between overflow-hidden">
-    <!-- 畫布容器 -->
-    <div id="canvasContainer" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden">
-      <!-- 實際畫布（使用 JS 動態控制 Pan & Zoom） -->
-      <canvas id="mainCanvas" class="absolute top-0 left-0 origin-top-left"></canvas>
-      
-      <!-- 畫布加載中提示 -->
-      <div id="loadingOverlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-4 z-20">
-        <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-        <p id="loadingText" class="text-sm text-cyan-400 font-bold tracking-widest animate-pulse">正在安全連接雲端像素伺服器...</p>
-      </div>
-
-      <!-- 冷卻中顯示的半透明遮罩 -->
-      <div id="cooldownTimer" class="absolute top-4 right-4 bg-slate-900/90 border border-slate-800 py-2 px-4 rounded-xl shadow-2xl flex items-center gap-3 z-10 pointer-events-none opacity-0 transition-opacity duration-300">
-        <div class="relative w-8 h-8 flex items-center justify-center">
-          <svg class="w-full h-full transform -rotate-90">
-            <circle cx="16" cy="16" r="14" stroke="#1e293b" stroke-width="3" fill="transparent"/>
-            <circle id="cooldownProgress" cx="16" cy="16" r="14" stroke="#ef4444" stroke-width="3" fill="transparent" stroke-dasharray="88" stroke-dashoffset="0"/>
-          </svg>
-          <span id="cooldownSeconds" class="absolute text-xs font-black text-rose-500">5</span>
-        </div>
-        <div class="text-left">
-          <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">冷卻中</div>
-          <div class="text-xs text-slate-300">請等待世界重載...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 底部調色盤區 -->
-    <div class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col items-center gap-3 z-10 shadow-2xl shrink-0">
-      <div class="w-full max-w-4xl flex items-center justify-between">
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">選擇色彩</span>
-        <div class="flex items-center gap-1.5 bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800">
-          <span class="text-[10px] text-slate-500">已選顏色:</span>
-          <span id="colorHexText" class="text-xs font-mono text-cyan-400 uppercase">#FF4500</span>
-          <span id="colorPreview" class="w-3.5 h-3.5 rounded bg-[#ff4500] border border-white/20"></span>
-        </div>
-      </div>
-      
-      <!-- 滾動色塊容器 -->
-      <div id="palette" class="w-full max-w-4xl flex gap-2 overflow-x-auto pb-1 justify-start md:justify-center">
-        <!-- JS 動態渲染色塊 -->
-      </div>
-    </div>
-  </main>
-
-  <!-- 簡易自定義通知彈窗 -->
-  <div id="toast" class="fixed bottom-24 right-4 bg-slate-900 border border-cyan-500/30 text-cyan-400 text-sm py-2 px-4 rounded-xl shadow-2xl pointer-events-none opacity-0 transition-opacity duration-300 z-50 flex items-center gap-2">
-    <i data-lucide="info" class="w-4 h-4"></i>
-    <span id="toastText">訊息提示</span>
-  </div>
-
-  <!-- Firebase 11.6.1 SDK 模組導入 -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-    // --- 1. 初始化 Lucide 圖標 ---
-    lucide.createIcons();
-
-    // --- 2. 遊戲常數設定 ---
-    const GRID_SIZE = 1000;       // 1000x1000 百萬畫布
-    const CHUNK_SIZE = 100;       // 將畫布分割為 10x10 個 100x100 的分塊(Chunks)
-    const COOLDOWN_TIME = 3000;   // 每次繪製的冷卻時間：3 秒 (即時版建議 3 秒以內提高趣味)
-    
-    // 官方經典 r/place 豐富調色盤
-    const COLORS = [
-      '#FF4500', '#FFA800', '#FFD635', '#00A368', '#7EED56', '#2450A4', '#3690EA', 
-      '#51E9F4', '#811E9F', '#B44AC0', '#FF99AA', '#9C6926', '#000000', '#898D90', '#D4D7D9', '#FFFFFF',
-      '#94B3FF', '#493AC1', '#6A5CFF', '#E4ABFF', '#DE1073', '#FF3881', '#941000', '#E50000',
-      '#FFB470', '#00756F', '#00CC78', '#008525', '#004313', '#0052FF', '#003056'
-    ];
-    const uniqueColors = [...new Set(COLORS)];
-
-    // 系統變數
-    let activeColor = uniqueColors[0];
-    let isDrawMode = true;
-    let isSpacePressed = false;
-
-    // 畫布操作狀態 (Pan & Zoom)
-    let scale = 1.0;
-    let offsetX = 0;
-    let offsetY = 0;
-    let isDragging = false;
-    let startX = 0, startY = 0;
-
-    // 冷卻與使用者狀態
-    let lastPaintTime = 0;
-    let cooldownInterval = null;
-    let currentUser = null;
-
-    // --- 3. 獲取環境變數與 Firebase 初始化 ---
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'real-place-game';
-    const firebaseConfig = JSON.parse(__firebase_config);
-    
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    // --- 4. 初始化畫布系統 ---
-    const mainCanvas = document.getElementById('mainCanvas');
-    const mainCtx = mainCanvas.getContext('2d');
-    const container = document.getElementById('canvasContainer');
-
-    // 離屏畫布：在記憶體中維護最即時完整的 1000x1000 畫面
-    const virtualCanvas = document.createElement('canvas');
-    virtualCanvas.width = GRID_SIZE;
-    virtualCanvas.height = GRID_SIZE;
-    const vCtx = virtualCanvas.getContext('2d');
-
-    // 預先繪製純白底
-    vCtx.fillStyle = '#FFFFFF';
-    vCtx.fillRect(0, 0, GRID_SIZE, GRID_SIZE);
-
-    // --- 5. Firebase 身份驗證與即時監聽 (核心機制) ---
-    const initAuthAndSync = async () => {
-      try {
-        document.getElementById('loadingText').textContent = "正在取得安全令牌...";
-        
-        // 優先使用自訂 Custom Token 登入
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素大戰：全球即時共繪畫布 (r/place Clone)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Pixel Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
         }
-      } catch (error) {
-        console.error("Auth failed, retrying anonymous:", error);
-        await signInAnonymously(auth);
-      }
-    };
+        /* 保持像素點絕對清晰不模糊 */
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        /* 美化滾動條 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col md:flex-row overflow-hidden select-none">
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUser = user;
-        document.getElementById('artistId').textContent = user.uid.substring(0, 8) + '...';
+    <!-- ==========================================
+        左側：控制台 & 陣營資訊 & 聊天室
+       ========================================== -->
+    <div class="w-full md:w-96 flex flex-col bg-slate-900 border-r border-slate-800 shadow-2xl shrink-0 z-20 h-2/5 md:h-full">
+        <!-- 頂部 Header -->
+        <div class="p-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🎨</span>
+                <div>
+                    <h1 class="text-sm font-bold tracking-wider text-cyan-400 pixel-font">r/place CLONE</h1>
+                    <p class="text-[10px] text-slate-400 mt-1">即時共繪萬人沙盒</p>
+                </div>
+            </div>
+            <!-- 音效切換 -->
+            <button id="btn-sound" class="px-2.5 py-1.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800 text-xs transition-colors hover:bg-cyan-900">
+                🔊 音效: 開
+            </button>
+        </div>
+
+        <!-- 使用者設定卡片 -->
+        <div class="p-4 bg-slate-900/50 border-b border-slate-800 space-y-3">
+            <div class="text-[10px] font-bold text-slate-500 tracking-wider uppercase pixel-font">ID & FACTION</div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="text-[9px] text-slate-500 block mb-1">玩家暱稱</label>
+                    <input id="input-username" type="text" maxlength="12" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-cyan-300 focus:outline-none focus:border-cyan-500">
+                </div>
+                <div>
+                    <label class="text-[9px] text-slate-500 block mb-1">所屬陣營</label>
+                    <input id="input-faction" type="text" maxlength="10" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-yellow-300 focus:outline-none focus:border-yellow-500">
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500">陣營代表色:</span>
+                    <input id="input-faction-color" type="color" value="#00D3DD" class="w-7 h-5 bg-transparent border-0 cursor-pointer">
+                </div>
+                <div class="text-[10px] text-slate-500">
+                    連線狀態: <span id="sync-status" class="text-amber-400">連線中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 三分切換標籤 -->
+        <div class="flex border-b border-slate-800 text-xs font-bold bg-slate-950">
+            <button id="tab-chat" class="flex-1 py-3 text-center border-b-2 border-cyan-500 text-cyan-400 bg-slate-900/40">
+                💬 陣營外交
+            </button>
+            <button id="tab-activity" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                ⚡ 落筆活動
+            </button>
+            <button id="tab-leaderboard" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                🏆 領土佔比
+            </button>
+        </div>
+
+        <!-- 內容容器 -->
+        <div class="flex-1 overflow-y-auto p-4 relative min-h-0">
+            <!-- A. 聊天室 -->
+            <div id="panel-chat" class="flex flex-col h-full justify-between">
+                <div id="chat-messages" class="space-y-2 overflow-y-auto flex-1 pr-1 max-h-[160px] md:max-h-none">
+                    <!-- 訊息將動態插入 -->
+                </div>
+                <form id="chat-form" class="mt-3 pt-2 border-t border-slate-800 flex gap-1.5 shrink-0">
+                    <input id="chat-input" type="text" placeholder="輸入盟軍外交訊息..." maxlength="50" required
+                           class="flex-1 bg-slate-950 border border-slate-700 rounded px-2.5 py-2 text-xs focus:outline-none focus:border-cyan-500">
+                    <button type="submit" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-extrabold px-4 py-2 rounded text-xs transition-colors">
+                        發送
+                    </button>
+                </form>
+            </div>
+
+            <!-- B. 活動紀錄 -->
+            <div id="panel-activity" class="hidden space-y-2">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pixel-font">LIVE LOGS</h3>
+                <div id="activity-list" class="space-y-1.5 text-xs">
+                    <!-- 活動紀錄將動態插入 -->
+                </div>
+            </div>
+
+            <!-- C. 陣營領土 -->
+            <div id="panel-leaderboard" class="hidden space-y-3">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider pixel-font">TERRITORIES</h3>
+                <div id="leaderboard-list" class="space-y-2">
+                    <!-- 領土佔有排行榜動態插入 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 底層說明 -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950 text-[10px] text-slate-500 space-y-1 shrink-0">
+            <div class="font-bold text-slate-400">💡 快捷操作說明：</div>
+            <div>• 滑鼠滾輪：自由放大或縮小畫布。</div>
+            <div>• <kbd class="px-1 bg-slate-900 rounded border border-slate-800">Shift</kbd> + 滑鼠拖曳：可自由移動視野。</div>
+            <div>• 冷卻時間結束即可在全球共用畫布畫下像素！</div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+        右側：像素主畫布空間
+       ========================================== -->
+    <div class="flex-1 flex flex-col relative bg-slate-950 overflow-hidden">
         
-        // 進入連線成功狀態
-        updateStatusIndicator('connected');
-        showToast('🟢 雲端同步系統已建立安全連線！', 'success');
+        <!-- 浮動抬頭顯示器 (HUD) -->
+        <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+            <!-- 像素屬性與座標 -->
+            <div class="bg-slate-900/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-800 shadow-lg text-xs pointer-events-auto flex items-center gap-4">
+                <div class="flex items-center gap-1.5 border-r border-slate-800 pr-3">
+                    <span class="text-slate-500">位置:</span>
+                    <span id="hud-coordinates" class="font-mono text-yellow-400 font-bold">X: - Y: -</span>
+                </div>
+                <div id="hud-owner" class="flex items-center gap-2 text-slate-400">
+                    選取空白區域
+                </div>
+            </div>
 
-        // 開始向 Firestore 進行全圖即時雙向監聽 (Rule 1 & Rule 2)
-        startRealtimeListener();
-      } else {
-        updateStatusIndicator('disconnected');
-      }
-    });
+            <!-- 視角控制器 -->
+            <div class="flex gap-2 pointer-events-auto">
+                <button id="btn-grid" class="px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-colors border bg-slate-900 text-slate-400 border-slate-800">
+                    🌐 格線: 隱藏
+                </button>
+                <button id="btn-center" class="bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-colors">
+                    🎯 置中
+                </button>
+            </div>
+        </div>
 
-    // 啟動監聽分塊資料
-    function startRealtimeListener() {
-      document.getElementById('loadingText').textContent = "正在載入世界像素畫布...";
-      
-      // 指向嚴格規定的 Public Path (Rule 1)
-      const dataCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'chunks');
+        <!-- 側邊縮放鈕 -->
+        <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-10">
+            <button id="btn-zoom-in" class="w-10 h-10 bg-slate-900/90 hover:bg-slate-800 rounded-lg text-lg font-bold flex items-center justify-center border border-slate-800 shadow-md text-slate-200">＋</button>
+            <div id="zoom-indicator" class="bg-slate-900/95 py-1 text-center font-mono text-[9px] text-cyan-400 font-bold rounded border border-slate-800">100%</div>
+            <button id="btn-zoom-out" class="w-10 h-10 bg-slate-900/90 hover:bg-slate-800 rounded-lg text-lg font-bold flex items-center justify-center border border-slate-800 shadow-md text-slate-200">－</button>
+        </div>
 
-      // 監聽此集合的任何變化 (Rule 2: 不含任何 compound query)
-      onSnapshot(dataCollectionRef, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-          const docData = change.doc.data();
-          const docId = change.doc.id; // 格式如 chunk_3_4
-          
-          const parts = docId.split('_');
-          if (parts.length === 3 && parts[0] === 'chunk') {
-            const cx = parseInt(parts[1]);
-            const cy = parseInt(parts[2]);
-            
-            if (!isNaN(cx) && !isNaN(cy)) {
-              renderChunkData(cx, cy, docData.p || {});
+        <!-- 畫布視角容器 (負責 Pan & Zoom) -->
+        <div id="canvas-container" class="flex-1 w-full h-full flex items-center justify-center relative cursor-crosshair overflow-hidden">
+            <div id="canvas-wrapper" class="shadow-2xl border-4 border-slate-800 relative select-none" style="transform: translate(0px, 0px) scale(4); transform-origin: center center;">
+                <canvas id="paint-canvas" width="128" height="128" class="bg-white" style="width: 512px; height: 512px;"></canvas>
+            </div>
+        </div>
+
+        <!-- 底部署色盤 & 倒數計時區 -->
+        <div class="p-4 bg-slate-900 border-t border-slate-800 z-10">
+            <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
+                
+                <!-- 像素顏色選取 -->
+                <div class="flex flex-col gap-1.5 w-full md:w-auto">
+                    <span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">調色盤 PALETTE (點擊選擇顏色)</span>
+                    <div id="palette-container" class="flex flex-wrap gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-800 max-h-24 overflow-y-auto">
+                        <!-- 色塊動態生成 -->
+                    </div>
+                </div>
+
+                <!-- 冷卻計時器 -->
+                <div class="flex items-center gap-4 w-full md:w-auto shrink-0 justify-end">
+                    <div class="text-right">
+                        <span class="text-[9px] text-slate-500 block uppercase tracking-wider font-bold">落筆冷卻計時</span>
+                        <div id="cooldown-text" class="text-lg font-bold font-mono text-green-400">⚡ 準備就緒！</div>
+                    </div>
+                    <!-- 圓形計時進度圈 -->
+                    <div class="relative w-14 h-14 rounded-full bg-slate-950 border border-slate-800 flex items-center justify-center shadow-inner overflow-hidden">
+                        <div id="cooldown-fill" class="absolute bottom-0 left-0 right-0 bg-red-600/20 transition-all duration-1000 h-0" style="transform-origin: bottom;"></div>
+                        <span id="cooldown-timer" class="text-sm font-bold font-mono z-10 text-green-400">OK</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Firebase 模組化導入 & 核心邏輯 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. FIREBASE & CLOUD CONFIGURATION (RULE 1, 3)
+        // ==========================================
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'pixel-war-classic-html';
+
+        // 萬人像素大戰 32 經典飽和色
+        const PALETTE = [
+            '#FFFFFF', '#E4E4E4', '#888888', '#222222',
+            '#FFA7D1', '#E50000', '#E59500', '#A06A42',
+            '#E5D900', '#94E044', '#02BE01', '#00D3DD',
+            '#0083C7', '#0000EA', '#CF00F1', '#820080',
+            '#FFD300', '#FF9F00', '#FF4500', '#900C3F',
+            '#4A148C', '#00E676', '#1DE9B6', '#00B0FF',
+            '#2979FF', '#651FFF', '#AA00FF', '#FF1744',
+            '#F50057', '#FF8F00', '#3E2723', '#000000'
+        ];
+
+        const BOARD_SIZE = 128;
+        const COOLDOWN_SECONDS = 10;
+
+        // 狀態管理
+        let user = null;
+        let username = localStorage.getItem('pixel_username') || `玩家_${Math.floor(Math.random() * 9000 + 1000)}`;
+        let faction = localStorage.getItem('pixel_faction') || '自由畫家';
+        let factionColor = localStorage.getItem('pixel_faction_color') || '#00D3DD';
+
+        let pixels = {};
+        let selectedColor = '#E50000';
+        let hoveredPixel = null;
+        let cooldownTime = 0;
+        let cooldownInterval = null;
+
+        // 視角控制
+        let zoom = 4;
+        let pan = { x: 0, y: 0 };
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let gridVisible = false;
+        let soundEnabled = true;
+
+        // DOM 元素引用
+        const canvas = document.getElementById('paint-canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const canvasContainer = document.getElementById('canvas-container');
+        
+        const inputUsername = document.getElementById('input-username');
+        const inputFaction = document.getElementById('input-faction');
+        const inputFactionColor = document.getElementById('input-faction-color');
+        const syncStatus = document.getElementById('sync-status');
+        
+        const tabChat = document.getElementById('tab-chat');
+        const tabActivity = document.getElementById('tab-activity');
+        const tabLeaderboard = document.getElementById('tab-leaderboard');
+        const panelChat = document.getElementById('panel-chat');
+        const panelActivity = document.getElementById('panel-activity');
+        const panelLeaderboard = document.getElementById('panel-leaderboard');
+
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const activityList = document.getElementById('activity-list');
+        const leaderboardList = document.getElementById('leaderboard-list');
+
+        const hudCoordinates = document.getElementById('hud-coordinates');
+        const hudOwner = document.getElementById('hud-owner');
+        const btnGrid = document.getElementById('btn-grid');
+        const btnCenter = document.getElementById('btn-center');
+        const btnZoomIn = document.getElementById('btn-zoom-in');
+        const btnZoomOut = document.getElementById('btn-zoom-out');
+        const zoomIndicator = document.getElementById('zoom-indicator');
+        const btnSound = document.getElementById('btn-sound');
+        const paletteContainer = document.getElementById('palette-container');
+
+        const cooldownText = document.getElementById('cooldown-text');
+        const cooldownTimer = document.getElementById('cooldown-timer');
+        const cooldownFill = document.getElementById('cooldown-fill');
+
+        // ==========================================
+        // 2. RETRO SOUND SYNTHESIZER (8-bit Web Audio)
+        // ==========================================
+        function playSynthSound(frequency, duration, type = 'sine') {
+            if (!soundEnabled) return;
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+                
+                gainNode.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.start();
+                oscillator.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.warn("無法初始化 Web Audio API:", e);
             }
-          }
+        }
+
+        // ==========================================
+        // 3. AUTHENTICATION ONCE & LISTENERS (RULE 3)
+        // ==========================================
+        async function initAuthentication() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Firebase Auth 驗證失敗:", error);
+            }
+        }
+
+        onAuthStateChanged(auth, (firebaseUser) => {
+            if (firebaseUser) {
+                user = firebaseUser;
+                syncStatus.innerText = "● 已連接";
+                syncStatus.className = "text-green-400 font-bold";
+                startRealtimeSync();
+            } else {
+                syncStatus.innerText = "○ 連線中...";
+                syncStatus.className = "text-amber-400";
+            }
         });
 
-        // 首次加載完成後關閉 Loading 遮罩
-        const loadingOverlay = document.getElementById('loadingOverlay');
-        if (!loadingOverlay.classList.contains('hidden')) {
-          loadingOverlay.classList.add('hidden');
-          resetViewToCenter();
+        // ==========================================
+        // 4. REAL-TIME DATA SYNCING (RULES 1 & 2)
+        // ==========================================
+        function startRealtimeSync() {
+            if (!user) return;
+
+            // A. 即時同步全服像素 (無複合篩選，直接拉取變更)
+            const pixelsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'pixels');
+            onSnapshot(pixelsCollection, (snapshot) => {
+                snapshot.forEach((doc) => {
+                    pixels[doc.id] = doc.data();
+                });
+                renderCanvas();
+                updateLeaderboard();
+                updateActivityLogs(snapshot);
+            }, (error) => {
+                console.error("同步像素畫布失敗:", error);
+            });
+
+            // B. 即時同步聊天室
+            const chatCollection = collection(db, 'artifacts', appId, 'public', 'data', 'chat');
+            onSnapshot(chatCollection, (snapshot) => {
+                const msgs = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    msgs.push({
+                        id: doc.id,
+                        ...data,
+                        date: data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date()) : new Date()
+                    });
+                });
+                // 內存排序聊天內容 (RULE 2)
+                msgs.sort((a, b) => a.date - b.date);
+                renderChat(msgs.slice(-40)); // 僅顯示最新 40 則訊息
+            }, (error) => {
+                console.error("同步聊天室失敗:", error);
+            });
         }
 
-        draw();
-      }, (error) => {
-        console.error("Firestore sync error:", error);
-        showToast('❌ 同步錯誤，請重整網頁', 'error');
-      });
-    }
+        // ==========================================
+        // 5. RENDERING ENGINE
+        // ==========================================
+        function renderCanvas() {
+            // 背景底色預設白色
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, BOARD_SIZE, BOARD_SIZE);
 
-    // 將分塊的像素數據繪製到離屏虛擬畫布上
-    function renderChunkData(cx, cy, pixels) {
-      const startX = cx * CHUNK_SIZE;
-      const startY = cy * CHUNK_SIZE;
+            // 繪製每一個像素
+            Object.keys(pixels).forEach(key => {
+                const [x, y] = key.split('_').map(Number);
+                const data = pixels[key];
+                ctx.fillStyle = data.color || '#FFFFFF';
+                ctx.fillRect(x, y, 1, 1);
+            });
 
-      // 清空該分塊區域回白色
-      vCtx.fillStyle = '#FFFFFF';
-      vCtx.fillRect(startX, startY, CHUNK_SIZE, CHUNK_SIZE);
+            // 格線渲染 (放大到一定程度時顯示)
+            if (gridVisible && zoom >= 8) {
+                ctx.strokeStyle = 'rgba(100, 100, 100, 0.15)';
+                ctx.lineWidth = 0.05;
+                for (let i = 0; i <= BOARD_SIZE; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, BOARD_SIZE);
+                    ctx.stroke();
 
-      // 依序著色有紀錄的像素
-      Object.entries(pixels).forEach(([indexStr, color]) => {
-        const index = parseInt(indexStr);
-        const localX = index % CHUNK_SIZE;
-        const localY = Math.floor(index / CHUNK_SIZE);
-        
-        vCtx.fillStyle = color;
-        vCtx.fillRect(startX + localX, startY + localY, 1, 1);
-      });
-    }
-
-    // 更新連線狀態燈號 UI
-    function updateStatusIndicator(status) {
-      const statusDot = document.getElementById('statusDot');
-      const pingRing = document.getElementById('pingRing');
-      const text = document.getElementById('connectionStatus');
-
-      if (status === 'connected') {
-        statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-emerald-500";
-        pingRing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
-        text.textContent = "即時同步中";
-        text.className = "text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-emerald-400";
-      } else if (status === 'disconnected') {
-        statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-rose-500";
-        pingRing.className = "";
-        text.textContent = "已中斷";
-        text.className = "text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-rose-400";
-      }
-    }
-
-    // --- 6. 點擊上傳像素至雲端 (Rule 3) ---
-    async function uploadPixel(x, y, color) {
-      if (!currentUser) {
-        showToast('🔒 正在建立雲端連線，請稍後...', 'error');
-        return;
-      }
-
-      const now = Date.now();
-      if (now - lastPaintTime < COOLDOWN_TIME) {
-        showToast('🎨 像素冷卻中，請稍候再點擊！', 'error');
-        playSynthSound(150, 'triangle', 0.15);
-        return;
-      }
-
-      // 1. 計算該座標屬於哪個分塊 (Chunk)
-      const cx = Math.floor(x / CHUNK_SIZE);
-      const cy = Math.floor(y / CHUNK_SIZE);
-      const localX = x % CHUNK_SIZE;
-      const localY = y % CHUNK_SIZE;
-      const localIndex = localY * CHUNK_SIZE + localX;
-
-      const chunkId = `chunk_${cx}_${cy}`;
-      
-      // 2. 嚴格對準 Public Data Path (Rule 1)
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', chunkId);
-
-      // 本地先繪製，帶來完美即時回饋感 (Optimistic UI Update)
-      vCtx.fillStyle = color;
-      vCtx.fillRect(x, y, 1, 1);
-      draw();
-      playSynthSound(600, 'sine', 0.08);
-      startCooldown();
-
-      try {
-        // 3. 上傳至雲端（使用動態巢狀欄位更新，若無此文檔則自動 merge 建立）
-        await setDoc(docRef, {
-          p: {
-            [localIndex]: color
-          }
-        }, { merge: true });
-        
-      } catch (error) {
-        console.error("Upload pixel failed:", error);
-        showToast('❌ 寫入雲端發生錯誤，請重試', 'error');
-      }
-    }
-
-    // --- 7. 繪製主畫布 (Pan & Zoom 變換渲染) ---
-    function draw() {
-      mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
-      
-      mainCtx.save();
-      // 應用拖曳與縮放矩陣
-      mainCtx.translate(offsetX, offsetY);
-      mainCtx.scale(scale, scale);
-
-      // 關閉平滑化，保證乾淨利落的 8-bit 像素邊緣
-      mainCtx.imageSmoothingEnabled = false;
-      mainCtx.mozImageSmoothingEnabled = false;
-      mainCtx.webkitImageSmoothingEnabled = false;
-      mainCtx.msImageSmoothingEnabled = false;
-
-      // 繪製離屏緩衝畫布
-      mainCtx.drawImage(virtualCanvas, 0, 0);
-
-      // 放大倍率高於 12 時，自動疊加細網格
-      if (scale > 12) {
-        mainCtx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
-        mainCtx.lineWidth = 1 / scale;
-        mainCtx.beginPath();
-        for (let i = 0; i <= GRID_SIZE; i += 1) {
-          mainCtx.moveTo(i, 0);
-          mainCtx.lineTo(i, GRID_SIZE);
-          mainCtx.moveTo(0, i);
-          mainCtx.lineTo(GRID_SIZE, i);
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(BOARD_SIZE, i);
+                    ctx.stroke();
+                }
+            }
         }
-        mainCtx.stroke();
-      }
 
-      mainCtx.restore();
-    }
+        function renderChat(messages) {
+            chatMessages.innerHTML = '';
+            if (messages.length === 0) {
+                chatMessages.innerHTML = `<p class="text-slate-500 text-xs text-center py-6">尚無對話。輸入第一則訊息，召集隊友吧！</p>`;
+                return;
+            }
 
-    function resizeCanvas() {
-      mainCanvas.width = container.clientWidth;
-      mainCanvas.height = container.clientHeight;
-      draw();
-    }
-    window.addEventListener('resize', resizeCanvas);
-
-    function resetViewToCenter() {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      scale = Math.min(w, h) / GRID_SIZE * 0.95;
-      offsetX = (w - GRID_SIZE * scale) / 2;
-      offsetY = (h - GRID_SIZE * scale) / 2;
-      draw();
-    }
-
-    // --- 8. 拖曳與縮放互動機制 ---
-    container.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      const rect = mainCanvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const zoomFactor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-      const newScale = Math.min(Math.max(scale * zoomFactor, 0.25), 60);
-
-      offsetX = mouseX - ((mouseX - offsetX) / scale) * newScale;
-      offsetY = mouseY - ((mouseY - offsetY) / scale) * newScale;
-      scale = newScale;
-
-      draw();
-    }, { passive: false });
-
-    // 空白鍵快切拖移
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space' && !isSpacePressed) {
-        isSpacePressed = true;
-        setMode(false);
-      }
-    });
-    window.addEventListener('keyup', (e) => {
-      if (e.code === 'Space') {
-        isSpacePressed = false;
-        if (document.getElementById('btnDrawMode').classList.contains('bg-cyan-600')) {
-          setMode(true);
+            messages.forEach((msg) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-950/60 p-2 rounded border-l-4 text-xs text-slate-300";
+                div.style.borderLeftColor = msg.factionColor || '#ccc';
+                div.innerHTML = `
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="font-bold text-slate-100">${escapeHtml(msg.username)}</span>
+                        <span class="px-1 text-[8px] rounded text-slate-900 font-extrabold" style="background-color: ${msg.factionColor || '#ccc'}">
+                            ${escapeHtml(msg.faction || '無陣營')}
+                        </span>
+                    </div>
+                    <p class="text-slate-300 select-text break-all">${escapeHtml(msg.text)}</p>
+                `;
+                chatMessages.appendChild(div);
+            });
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-      }
-    });
 
-    container.addEventListener('mousedown', (e) => {
-      if (e.button === 1 || !isDrawMode || isSpacePressed) {
-        isDragging = true;
-        startX = e.clientX - offsetX;
-        startY = e.clientY - offsetY;
-        container.style.cursor = 'grabbing';
-        e.preventDefault();
-      }
-    });
+        function updateActivityLogs(snapshot) {
+            activityList.innerHTML = '';
+            const list = [];
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                if (data.timestamp) {
+                    list.push({
+                        id: doc.id,
+                        ...data,
+                        date: data.timestamp.toDate ? data.timestamp.toDate() : new Date()
+                    });
+                }
+            });
+            
+            // 內存降序排列
+            list.sort((a, b) => b.date - a.date);
+            const recent = list.slice(0, 15);
 
-    window.addEventListener('mousemove', (e) => {
-      const rect = mainCanvas.getBoundingClientRect();
-      const canvasX = Math.floor((e.clientX - rect.left) / scale);
-      const canvasY = Math.floor((e.clientY - rect.top) / scale);
-      
-      if (canvasX >= 0 && canvasX < GRID_SIZE && canvasY >= 0 && canvasY < GRID_SIZE) {
-        document.getElementById('coordDisplay').textContent = `(${canvasX}, ${canvasY})`;
-      }
+            if (recent.length === 0) {
+                activityList.innerHTML = `<p class="text-slate-500 text-center py-6">等待玩家下筆...</p>`;
+                return;
+            }
 
-      if (isDragging) {
-        offsetX = e.clientX - startX;
-        offsetY = e.clientY - startY;
-        draw();
-      }
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isDragging) {
-        isDragging = false;
-        container.style.cursor = isDrawMode ? 'crosshair' : 'grab';
-      }
-    });
-
-    // 處理著色點擊
-    container.addEventListener('click', (e) => {
-      if (e.button === 0 && isDrawMode && !isSpacePressed) {
-        const rect = mainCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / scale);
-        const y = Math.floor((e.clientY - rect.top) / scale);
-
-        if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
-          uploadPixel(x, y, activeColor);
+            recent.forEach((log) => {
+                const [x, y] = log.id.split('_');
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-slate-950/40 p-2 rounded border border-slate-800 text-xs";
+                div.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm border border-slate-700 inline-block shrink-0" style="background-color: ${log.color}"></span>
+                        <span class="font-bold text-slate-300">${escapeHtml(log.username)}</span>
+                        <span class="text-[10px] text-slate-500">於 (${x}, ${y})</span>
+                    </div>
+                    <span class="text-[9px] px-1 rounded font-semibold" style="background-color: ${log.factionColor}1A; color: ${log.factionColor}">
+                        ${escapeHtml(log.faction)}
+                    </span>
+                `;
+                activityList.appendChild(div);
+            });
         }
-      }
-    });
 
-    // --- 9. 冷卻計時器 UI 運作 ---
-    function startCooldown() {
-      lastPaintTime = Date.now();
-      const timerOverlay = document.getElementById('cooldownTimer');
-      const progressCircle = document.getElementById('cooldownProgress');
-      const secondsSpan = document.getElementById('cooldownSeconds');
-      
-      timerOverlay.style.opacity = '1';
-      
-      if (cooldownInterval) clearInterval(cooldownInterval);
+        function updateLeaderboard() {
+            leaderboardList.innerHTML = '';
+            const factionScores = {};
+            let totalPlaced = 0;
 
-      const totalDash = 88;
-      let timeLeft = COOLDOWN_TIME / 1000;
-      
-      secondsSpan.textContent = Math.ceil(timeLeft);
-      progressCircle.style.strokeDashoffset = '0';
+            Object.values(pixels).forEach(pixel => {
+                const name = pixel.faction || '無陣營';
+                totalPlaced++;
+                if (!factionScores[name]) {
+                    factionScores[name] = { count: 0, color: pixel.factionColor || '#888' };
+                }
+                factionScores[name].count++;
+            });
 
-      cooldownInterval = setInterval(() => {
-        timeLeft -= 0.1;
-        if (timeLeft <= 0) {
-          clearInterval(cooldownInterval);
-          timerOverlay.style.opacity = '0';
-        } else {
-          secondsSpan.textContent = Math.ceil(timeLeft);
-          const offset = totalDash - (timeLeft / (COOLDOWN_TIME / 1000)) * totalDash;
-          progressCircle.style.strokeDashoffset = offset;
+            const sorted = Object.entries(factionScores)
+                .map(([name, d]) => ({ name, ...d }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 10);
+
+            if (sorted.length === 0) {
+                leaderboardList.innerHTML = `<p class="text-slate-500 text-center py-6">無領地劃分數據</p>`;
+                return;
+            }
+
+            sorted.forEach((fac, idx) => {
+                const pct = ((fac.count / totalPlaced) * 100).toFixed(1);
+                const div = document.createElement('div');
+                div.className = "space-y-1";
+                div.innerHTML = `
+                    <div class="flex justify-between text-xs">
+                        <span class="font-bold flex items-center gap-1.5">
+                            <span class="text-slate-500">#${idx+1}</span>
+                            <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${fac.color}"></span>
+                            ${escapeHtml(fac.name)}
+                        </span>
+                        <span class="font-mono text-cyan-400 font-semibold">${fac.count} 點 (${pct}%)</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
+                        <div class="h-full transition-all duration-500" style="background-color: ${fac.color}; width: ${pct}%"></div>
+                    </div>
+                `;
+                leaderboardList.appendChild(div);
+            });
         }
-      }, 100);
-    }
 
-    // --- 10. 本地 AI 靈感助手 (開啟時會在本地渲染) ---
-    const aiToggle = document.getElementById('toggleAI');
-    setInterval(() => {
-      if (!aiToggle.checked) return;
-
-      // 獲取目前視角邊界，讓 AI 剛好畫在螢幕視野內增加互動
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      const minX = Math.max(0, Math.floor(-offsetX / scale));
-      const maxX = Math.min(GRID_SIZE - 1, Math.floor((w - offsetX) / scale));
-      const minY = Math.max(0, Math.floor(-offsetY / scale));
-      const maxY = Math.min(GRID_SIZE - 1, Math.floor((h - offsetY) / scale));
-
-      if (maxX > minX && maxY > minY) {
-        for (let i = 0; i < 3; i++) {
-          const rx = minX + Math.floor(Math.random() * (maxX - minX));
-          const ry = minY + Math.floor(Math.random() * (maxY - minY));
-          const rColor = uniqueColors[Math.floor(Math.random() * uniqueColors.length)];
-          
-          // 只繪製在本地離屏畫布上，不傳送至雲端 (防止濫用流量)
-          vCtx.fillStyle = rColor;
-          vCtx.fillRect(rx, ry, 1, 1);
+        // ==========================================
+        // 6. VIEW NAVIGATION (DRAG, PAN, ZOOM, TOUCH)
+        // ==========================================
+        function updateTransform() {
+            canvasWrapper.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
+            zoomIndicator.innerText = `${Math.round(zoom * 25)}%`;
         }
-        draw();
-      }
-    }, 400);
 
-    // --- 11. UI 面板操作控制綁定 ---
-    const btnDrawMode = document.getElementById('btnDrawMode');
-    const btnPanMode = document.getElementById('btnPanMode');
+        function handleZoom(amount, isRelative = true) {
+            const lastZoom = zoom;
+            if (isRelative) {
+                zoom = Math.max(1, Math.min(32, zoom * amount));
+            } else {
+                zoom = Math.max(1, Math.min(32, amount));
+            }
+            playSynthSound(600 + zoom * 20, 0.04, 'triangle');
+            updateTransform();
+        }
 
-    function setMode(drawMode) {
-      isDrawMode = drawMode;
-      if (isDrawMode) {
-        btnDrawMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500";
-        btnPanMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700";
-        container.style.cursor = 'crosshair';
-      } else {
-        btnDrawMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700";
-        btnPanMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500";
-        container.style.cursor = 'grab';
-      }
-    }
+        // 觸控與滑鼠拖曳
+        canvasContainer.addEventListener('mousedown', (e) => {
+            if (e.button === 1 || e.button === 2 || e.shiftKey) {
+                e.preventDefault();
+                isDragging = true;
+                dragStart = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+            }
+        });
 
-    btnDrawMode.addEventListener('click', () => setMode(true));
-    btnPanMode.addEventListener('click', () => setMode(false));
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                pan = {
+                    x: e.clientX - dragStart.x,
+                    y: e.clientY - dragStart.y
+                };
+                updateTransform();
+            } else {
+                // Hover 座標計算
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_SIZE));
+                const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_SIZE));
 
-    // 定位與跳轉
-    document.getElementById('btnGoto').addEventListener('click', () => {
-      const x = parseInt(document.getElementById('gotoX').value);
-      const y = parseInt(document.getElementById('gotoY').value);
-      if (isNaN(x) || isNaN(y) || x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
-        showToast('❌ 請輸入 0 - 999 之間的有效座標', 'error');
-        return;
-      }
-      
-      scale = 18;
-      offsetX = container.clientWidth / 2 - x * scale;
-      offsetY = container.clientHeight / 2 - y * scale;
-      draw();
-      showToast(`📍 已傳送至座標: (${x}, ${y})`, 'success');
-    });
+                if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+                    hoveredPixel = { x, y };
+                    hudCoordinates.innerText = `X: ${x} Y: ${y}`;
+                    const pixel = pixels[`${x}_${y}`];
+                    if (pixel) {
+                        hudOwner.innerHTML = `
+                            <span class="text-slate-500">擁有者:</span>
+                            <span class="font-bold text-slate-200">${escapeHtml(pixel.username)}</span>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] text-slate-900 font-extrabold" style="background-color: ${pixel.factionColor}">
+                                ${escapeHtml(pixel.faction)}
+                            </span>
+                        `;
+                    } else {
+                        hudOwner.innerHTML = `<span class="text-slate-500">原始空白畫布 (點擊搶下！)</span>`;
+                    }
+                } else {
+                    hoveredPixel = null;
+                }
+            }
+        });
 
-    // 下載完整 1000x1000 Png
-    document.getElementById('btnSave').addEventListener('click', () => {
-      const link = document.createElement('a');
-      link.download = `real_place_canvas_${Date.now()}.png`;
-      link.href = virtualCanvas.toDataURL('image/png');
-      link.click();
-      showToast('💾 成功匯出 1000x1000 百萬像素無損大圖！', 'success');
-    });
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
 
-    // 重設視野
-    document.getElementById('btnResetView').addEventListener('click', () => {
-      resetViewToCenter();
-      showToast('🔄 視野已重設回畫布中央', 'info');
-    });
+        // 滾輪縮放
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.25 : 0.8;
+            handleZoom(factor, true);
+        }, { passive: false });
 
-    // --- 12. 動態生成調色盤 UI ---
-    const paletteContainer = document.getElementById('palette');
-    const colorHexText = document.getElementById('colorHexText');
-    const colorPreview = document.getElementById('colorPreview');
+        // 置中
+        btnCenter.addEventListener('click', () => {
+            zoom = 4;
+            pan = { x: 0, y: 0 };
+            updateTransform();
+            playSynthSound(500, 0.08, 'sine');
+        });
 
-    uniqueColors.forEach((color, index) => {
-      const btn = document.createElement('button');
-      btn.className = `w-8 h-8 rounded-lg border-2 shrink-0 transition-all hover:scale-110 active:scale-95 ${index === 0 ? 'border-white scale-110' : 'border-transparent'}`;
-      btn.style.backgroundColor = color;
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#palette button').forEach(b => b.classList.remove('border-white', 'scale-110'));
-        btn.classList.add('border-white', 'scale-110');
-        activeColor = color;
-        colorHexText.textContent = color;
-        colorPreview.style.backgroundColor = color;
-        
-        setMode(true);
-      });
-      paletteContainer.appendChild(btn);
-    });
+        // 格線控制
+        btnGrid.addEventListener('click', () => {
+            gridVisible = !gridVisible;
+            btnGrid.innerText = `🌐 格線: ${gridVisible ? '顯示' : '隱藏'}`;
+            btnGrid.className = `px-3 py-1.5 rounded-lg text-xs font-bold shadow-md transition-colors border ${gridVisible ? 'bg-cyan-950 text-cyan-300 border-cyan-800' : 'bg-slate-900 text-slate-400 border-slate-800'}`;
+            renderCanvas();
+            playSynthSound(700, 0.05, 'sine');
+        });
 
-    // --- 13. 微型通知彈出與合成音效 ---
-    function showToast(msg, type = 'info') {
-      const toast = document.getElementById('toast');
-      const text = document.getElementById('toastText');
-      text.textContent = msg;
-      
-      toast.classList.remove('opacity-0');
-      toast.classList.add('opacity-100');
-      
-      setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0');
-      }, 2500);
-    }
+        // Zoom 按鈕
+        btnZoomIn.addEventListener('click', () => handleZoom(1.4, true));
+        btnZoomOut.addEventListener('click', () => handleZoom(0.7, true));
 
-    let audioCtx = null;
-    function playSynthSound(freq, type, duration) {
-      try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        
-        osc.type = type;
-        osc.frequency.value = freq;
-        
-        gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
-        
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch (e) {
-        // 靜音忽略
-      }
-    }
+        // 點擊畫下像素
+        canvasContainer.addEventListener('click', (e) => {
+            if (e.shiftKey || isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_SIZE));
+            const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_SIZE));
 
-    // --- 14. 啟動與初始化 ---
-    resizeCanvas();
-    initAuthAndSync();
-  </script>
+            if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
+                placePixel(x, y);
+            }
+        });
+
+        // ==========================================
+        // 7. GAME PLAY & COOLDOWN (防作弊落筆)
+        // ==========================================
+        async function placePixel(x, y) {
+            if (!user) return;
+            if (cooldownTime > 0) {
+                playSynthSound(120, 0.2, 'sawtooth');
+                return;
+            }
+
+            const pixelKey = `${x}_${y}`;
+            const previousData = pixels[pixelKey];
+
+            // 樂觀前端更新 (Optimistic Update)
+            pixels[pixelKey] = {
+                color: selectedColor,
+                username,
+                faction,
+                factionColor,
+                timestamp: { toDate: () => new Date() }
+            };
+            renderCanvas();
+            playSynthSound(800, 0.1, 'sine');
+
+            // 開始冷卻
+            startCooldown();
+
+            try {
+                // 雲端更新
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pixels', pixelKey);
+                await setDoc(docRef, {
+                    color: selectedColor,
+                    username,
+                    faction,
+                    factionColor,
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("像素落筆同步失敗:", err);
+                // 復原
+                if (previousData) {
+                    pixels[pixelKey] = previousData;
+                } else {
+                    delete pixels[pixelKey];
+                }
+                renderCanvas();
+            }
+        }
+
+        function startCooldown() {
+            cooldownTime = COOLDOWN_SECONDS;
+            updateCooldownUI();
+
+            if (cooldownInterval) clearInterval(cooldownInterval);
+            cooldownInterval = setInterval(() => {
+                cooldownTime--;
+                updateCooldownUI();
+                if (cooldownTime <= 0) {
+                    clearInterval(cooldownInterval);
+                    playSynthSound(950, 0.08, 'triangle');
+                }
+            }, 1000);
+        }
+
+        function updateCooldownUI() {
+            if (cooldownTime > 0) {
+                cooldownText.innerText = `⌛ 等待 ${cooldownTime} 秒`;
+                cooldownText.className = "text-lg font-bold font-mono text-red-500";
+                cooldownTimer.innerText = `${cooldownTime}s`;
+                cooldownTimer.className = "text-sm font-bold font-mono z-10 text-red-400";
+                cooldownFill.style.height = `${(cooldownTime / COOLDOWN_SECONDS) * 100}%`;
+            } else {
+                cooldownText.innerText = "⚡ 準備就緒！";
+                cooldownText.className = "text-lg font-bold font-mono text-green-400";
+                cooldownTimer.innerText = "OK";
+                cooldownTimer.className = "text-sm font-bold font-mono z-10 text-green-400";
+                cooldownFill.style.height = "0%";
+            }
+        }
+
+        // ==========================================
+        // 8. SIDE PANEL NAVIGATION (Tabs)
+        // ==========================================
+        function switchTab(activeTabId, activePanel) {
+            [tabChat, tabActivity, tabLeaderboard].forEach(tab => {
+                tab.classList.remove('border-cyan-500', 'text-cyan-400');
+                tab.classList.add('border-transparent', 'text-slate-400');
+            });
+            activeTabId.classList.add('border-cyan-500', 'text-cyan-400');
+            activeTabId.classList.remove('border-transparent', 'text-slate-400');
+
+            [panelChat, panelActivity, panelLeaderboard].forEach(p => p.classList.add('hidden'));
+            activePanel.classList.remove('hidden');
+            playSynthSound(600, 0.05, 'triangle');
+        }
+
+        tabChat.addEventListener('click', () => switchTab(tabChat, panelChat));
+        tabActivity.addEventListener('click', () => switchTab(tabActivity, panelActivity));
+        tabLeaderboard.addEventListener('click', () => switchTab(tabLeaderboard, panelLeaderboard));
+
+        // ==========================================
+        // 9. PROFILE & CHAT HANDLERS
+        // ==========================================
+        function saveProfile() {
+            username = inputUsername.value.trim() || `玩家_${Math.floor(Math.random() * 9000 + 1000)}`;
+            faction = inputFaction.value.trim() || '自由畫家';
+            factionColor = inputFactionColor.value;
+
+            localStorage.setItem('pixel_username', username);
+            localStorage.setItem('pixel_faction', faction);
+            localStorage.setItem('pixel_faction_color', factionColor);
+        }
+
+        inputUsername.value = username;
+        inputFaction.value = faction;
+        inputFactionColor.value = factionColor;
+
+        [inputUsername, inputFaction, inputFactionColor].forEach(element => {
+            element.addEventListener('change', () => {
+                saveProfile();
+                playSynthSound(440, 0.08, 'sine');
+            });
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = chatInput.value.trim();
+            if (!text || !user) return;
+
+            chatInput.value = '';
+            playSynthSound(1000, 0.05, 'sine');
+
+            try {
+                const chatCollection = collection(db, 'artifacts', appId, 'public', 'data', 'chat');
+                await addDoc(chatCollection, {
+                    text,
+                    username,
+                    faction,
+                    factionColor,
+                    timestamp: serverTimestamp()
+                });
+            } catch (err) {
+                console.error("訊息發送失敗:", err);
+            }
+        });
+
+        // ==========================================
+        // 10. GENERATING PALETTE UI & INITIALIZATION
+        // ==========================================
+        PALETTE.forEach(color => {
+            const btn = document.createElement('button');
+            btn.style.backgroundColor = color;
+            btn.className = `w-6 h-6 md:w-7 md:h-7 rounded-md border border-slate-900 transition-all hover:scale-105 flex items-center justify-center relative select-none`;
+            btn.addEventListener('click', () => {
+                selectedColor = color;
+                document.querySelectorAll('#palette-container button').forEach(b => b.innerHTML = '');
+                btn.innerHTML = `<span class="absolute text-[10px] font-bold" style="color: ${color === '#FFFFFF' ? '#000000' : '#FFFFFF'}">✓</span>`;
+                playSynthSound(500, 0.04, 'triangle');
+            });
+            if (color === selectedColor) {
+                btn.innerHTML = `<span class="absolute text-[10px] font-bold" style="color: #FFFFFF">✓</span>`;
+            }
+            paletteContainer.appendChild(btn);
+        });
+
+        btnSound.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            btnSound.innerText = `🔊 音效: ${soundEnabled ? '開' : '關'}`;
+            btnSound.className = `px-2.5 py-1.5 rounded text-xs transition-colors border ${soundEnabled ? 'bg-cyan-950 text-cyan-400 border-cyan-800 hover:bg-cyan-900' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`;
+        });
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // 初始化
+        initAuthentication();
+        updateTransform();
+        renderCanvas();
+    </script>
 </body>
 </html>
