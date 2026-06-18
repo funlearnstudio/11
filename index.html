@@ -546,6 +546,9 @@
 // ==========================================
         // 6. VIEW NAVIGATION (DRAG, PAN, ZOOM, TOUCH)
         // ==========================================
+
+        let panStart = { x: 0, y: 0 }; // 記錄開始拖曳時的 Pan 位置
+
         function updateTransform() {
             canvasWrapper.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
             zoomIndicator.innerText = `${Math.round(zoom * 25)}%`;
@@ -553,55 +556,50 @@
 
         function handleZoom(amount, isRelative = true, mouseX = null, mouseY = null) {
             const lastZoom = zoom;
-            if (isRelative) {
-                zoom = Math.max(1, Math.min(32, zoom * amount));
-            } else {
-                zoom = Math.max(1, Math.min(32, amount));
-            }
-
+            zoom = isRelative ? Math.max(1, Math.min(32, zoom * amount)) : Math.max(1, Math.min(32, amount));
             if (mouseX !== null && mouseY !== null) {
                 const zoomFactor = zoom / lastZoom;
                 pan.x = mouseX - (mouseX - pan.x) * zoomFactor;
                 pan.y = mouseY - (mouseY - pan.y) * zoomFactor;
             }
-            playSynthSound(600 + zoom * 20, 0.04, 'triangle');
             updateTransform();
         }
 
-        // ✅ 唯一的滾輪事件：包含滑鼠中心定位邏輯
+        // --- 核心拖曳邏輯 ---
+        function startDrag(clientX, clientY) {
+            isDragging = true;
+            dragStart = { x: clientX, y: clientY };
+            panStart = { x: pan.x, y: pan.y }; // 關鍵：記錄按下瞬間的偏移量
+        }
+
+        function doDrag(clientX, clientY) {
+            if (!isDragging) return;
+            // 關鍵：用「開始偏移量 + 移動差值」來更新，而不是直接等於移動差值
+            pan.x = panStart.x + (clientX - dragStart.x);
+            pan.y = panStart.y + (clientY - dragStart.y);
+            updateTransform();
+        }
+
+        // --- 事件綁定 ---
+        canvasContainer.addEventListener('mousedown', (e) => startDrag(e.clientX, e.clientY));
+        window.addEventListener('mousemove', (e) => doDrag(e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // --- 手機觸控支援 ---
+        canvasContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) doDrag(e.touches[0].clientX, e.touches[0].clientY);
+        });
+        window.addEventListener('touchend', () => { isDragging = false; });
+
+        // --- 滾輪縮放 ---
         canvasContainer.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const factor = e.deltaY < 0 ? 1.25 : 0.8;
             const rect = canvasContainer.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            handleZoom(factor, true, mouseX, mouseY);
+            handleZoom(e.deltaY < 0 ? 1.25 : 0.8, true, e.clientX - rect.left, e.clientY - rect.top);
         }, { passive: false });
-
-        // 滑鼠移動與拖曳
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) { 
-                pan = { x: e.clientX - dragStart.x, y: e.clientY - dragStart.y };
-                updateTransform();
-            } else {
-                const rect = canvas.getBoundingClientRect();
-                const x = Math.floor((e.clientX - rect.left) / (rect.width / BOARD_SIZE));
-                const y = Math.floor((e.clientY - rect.top) / (rect.height / BOARD_SIZE));
-                if (x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE) {
-                    hoveredPixel = { x, y };
-                    hudCoordinates.innerText = `X: ${x} Y: ${y}`;
-                    const pixel = pixels[`${x}_${y}`];
-                    hudOwner.innerHTML = pixel ? `擁有者: ${pixel.username}` : `原始空白畫布`;
-                }
-            }
-        });
-
-        window.addEventListener('mouseup', () => { isDragging = false; });
-        
-        // 置中、格線、縮放按鈕
-        btnCenter.addEventListener('click', () => { zoom = 4; pan = { x: 0, y: 0 }; updateTransform(); });
-        btnZoomIn.addEventListener('click', () => handleZoom(1.4, true));
-        btnZoomOut.addEventListener('click', () => handleZoom(0.7, true));
         // ==========================================
         // 7. GAME PLAY & COOLDOWN (防作弊落筆)
         // ==========================================
