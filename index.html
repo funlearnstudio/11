@@ -3,1865 +3,677 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>美西大冒險：公路黃金大卷軸 🗺️</title>
-  <!-- Tailwind CSS -->
+  <title>像素大戰：1000x1000 雲端即時萬人爭霸賽 (r/place)</title>
+  <!-- 引入 Tailwind CSS CDN 與 Lucide 圖標 -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Google Fonts: Playfair Display & Noto Serif TC -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
-  
   <style>
+    /* 隱藏滾動條 */
+    body::-webkit-scrollbar {
+      display: none;
+    }
     body {
-      font-family: 'Noto Serif TC', serif;
-      background-color: #1a0f0d;
-      background-image: radial-gradient(circle, #2c1611 0%, #0f0706 100%);
-      color: #3e2723;
-    }
-
-    /* 羊皮紙質感背景 */
-    .parchment {
-      background: radial-gradient(circle, #fbf2e3 50%, #e8d0b5 100%);
-      box-shadow: 
-        inset 0 0 50px rgba(139, 94, 60, 0.4),
-        0 15px 30px rgba(0, 0, 0, 0.5),
-        0 0 0 10px #2a1a15;
-      border: 3px double #8b5e3c;
-      position: relative;
-    }
-
-    /* 焦邊效果 */
-    .burnt-edge {
-      position: relative;
-    }
-    .burnt-edge::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      box-shadow: inset 0 0 20px rgba(62, 39, 35, 0.5);
-      pointer-events: none;
-      border-radius: inherit;
-    }
-
-    /* 遊戲卡牌懸浮效果 */
-    .adventure-card {
-      background: #fdfaf4;
-      border: 2px solid #bda387;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .adventure-card:hover {
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 10px 20px rgba(139, 94, 60, 0.25);
-      border-color: #8b5e3c;
-    }
-
-    /* 自訂滾動條 */
-    ::-webkit-scrollbar {
-      width: 10px;
-      height: 10px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #2a1a15;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #8b5e3c;
-      border: 2px solid #2a1a15;
-      border-radius: 5px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #c68a5c;
-    }
-
-    /* 物理金幣雨 Canvas */
-    #goldCanvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
-    /* 蓋印章動畫 */
-    @keyframes stampPress {
-      0% { transform: scale(4); opacity: 0; filter: blur(5px); }
-      50% { transform: scale(0.9); opacity: 0.8; filter: none; }
-      70% { transform: scale(1.1); }
-      100% { transform: scale(1) rotate(-8deg); opacity: 1; }
-    }
-    .stamp-active {
-      display: flex !important;
-      animation: stampPress 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) forwards;
-    }
-
-    /* 越野車地圖行進動畫 */
-    @keyframes carDrive {
-      0% { stroke-dashoffset: 1000; }
-      100% { stroke-dashoffset: 0; }
-    }
-    .map-path-active {
-      stroke-dasharray: 10;
-      animation: dash 30s linear infinite;
-    }
-    @keyframes dash {
-      to {
-        stroke-dashoffset: -1000;
-      }
-    }
-
-    /* 旋轉羅盤 */
-    .compass-spin {
-      animation: spin 12s linear infinite;
-    }
-    @keyframes spin {
-      100% { transform: rotate(360deg); }
-    }
-
-    /* 閃爍法陣動畫 */
-    @keyframes portalPulse {
-      0%, 100% { box-shadow: 0 0 15px rgba(139, 94, 60, 0.2); border-color: #8b5e3c; }
-      50% { box-shadow: 0 0 25px rgba(217, 119, 6, 0.5); border-color: #d97706; }
-    }
-    .portal-pulse {
-      animation: portalPulse 3s infinite;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
-<body class="overflow-x-hidden">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col md:flex-row overflow-hidden select-none font-sans">
 
-  <!-- 物理金幣與印章特效畫布 -->
-  <canvas id="goldCanvas"></canvas>
+  <!-- 左側控制面板 (桌面端) / 頂部控制面板 (行動端) -->
+  <aside class="w-full md:w-80 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 p-4 flex flex-col justify-between shrink-0 z-10 shadow-xl overflow-y-auto">
+    <div>
+      <!-- 標題與即時連線狀態 -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="flex h-3 w-3 relative">
+            <span id="pingRing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span id="statusDot" class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+          </span>
+          <h1 class="text-xl font-black tracking-wider text-cyan-400">r/place 雲端即時版</h1>
+        </div>
+        <span id="connectionStatus" class="text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-amber-400">連線中...</span>
+      </div>
 
-  <!-- 全螢幕開場藏寶箱動畫 (Intro) -->
-  <div id="gameIntro" class="fixed inset-0 bg-[#0f0706] z-[10000] flex flex-col items-center justify-center text-center p-4 transition-all duration-1000">
-    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-950/20 via-transparent to-black pointer-events-none"></div>
-    <div class="relative max-w-xl bg-[#2a1a15] border-4 border-[#8b5e3c] p-8 rounded-3xl shadow-2xl space-y-6">
-      <div class="flex justify-center">
-        <div class="w-24 h-24 bg-[#1a0f0d] rounded-full border-4 border-[#ca8a04] flex items-center justify-center shadow-lg relative">
-          <i id="introCompassIcon" data-lucide="compass" class="w-16 h-16 text-[#ca8a04] compass-spin"></i>
+      <!-- 藝術家資訊與在線人數 -->
+      <div class="bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 text-xs text-slate-400 mb-4 space-y-1">
+        <div class="flex justify-between">
+          <span>您的藝術家 ID:</span>
+          <span id="artistId" class="font-mono text-cyan-400 select-all">載入中...</span>
+        </div>
+        <div class="flex justify-between">
+          <span>當前地圖像素數:</span>
+          <span class="font-mono text-slate-300">1,000,000 (1K x 1K)</span>
         </div>
       </div>
-      <h1 class="text-3xl md:text-5xl font-black text-amber-100 tracking-widest font-serif drop-shadow-md">
-        美西大冒險 🗺️<br>
-        <span class="text-xl md:text-2xl text-[#c68a5c]">公路黃金大卷軸</span>
-      </h1>
-      <p class="text-sm text-stone-300 italic leading-relaxed">
-        「召集 Chris、Steve、Orinda、Jamilee！啟封神秘的跨州公路尋寶圖，踏上長達 14 天的狂野公路冒險，解鎖亞利桑那與加州的黃金秘寶！」
-      </p>
-      
-      <!-- 進入主頁按鈕 -->
-      <button onclick="startGame()" class="relative overflow-hidden group bg-gradient-to-r from-amber-600 to-amber-800 text-amber-50 font-black px-8 py-4 rounded-xl border-2 border-amber-400 shadow-xl transition-all hover:scale-105 active:scale-95 text-lg tracking-wider">
-        <span class="relative z-10 flex items-center gap-2">
-          <i data-lucide="key" class="w-5 h-5 animate-bounce"></i>
-          啟封藏寶圖
-        </span>
-        <div class="absolute inset-0 bg-amber-500 opacity-0 group-hover:opacity-20 transition-opacity"></div>
-      </button>
-    </div>
-  </div>
 
-  <!-- 主網頁架構 -->
-  <div class="max-w-6xl mx-auto px-4 py-8">
-    
-    <!-- 遊戲風頂部導覽列 -->
-    <header class="parchment rounded-3xl burnt-edge p-6 md:p-8 mb-8 text-center text-[#3e2723]">
-      <div class="absolute top-2 left-2 text-xl opacity-35">🧭</div>
-      <div class="absolute top-2 right-2 text-xl opacity-35">📜</div>
-      <div class="inline-flex items-center gap-2 bg-[#8b5e3c]/20 px-3 py-1 rounded-full text-xs font-black tracking-widest uppercase mb-3 border border-[#8b5e3c]/40">
-        <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-900"></i>
-        West Coast Highway Adventure • 2026
-      </div>
-      <h1 class="text-3xl md:text-5xl font-black tracking-wide text-[#3e2723] font-serif">
-        美西自駕公路金幣探險
-      </h1>
-      <p class="mt-2 text-xs md:text-sm font-bold text-[#5d4037] italic">
-        4 大州、14 天狂野遠征：洛杉磯 ➔ 拉斯維加斯 ➔ 大峽谷 ➔ 佩吉 ➔ 舊金山
-      </p>
-      
-      <div class="mt-4 flex flex-wrap justify-center gap-6 text-xs font-bold text-[#5d4037]">
-        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-4 h-4"></i> 05/23 － 06/05</span>
-        <span class="flex items-center gap-1"><i data-lucide="users" class="w-4 h-4"></i> 冒險隊員：Chris, Steve, Orinda, Jamilee</span>
-      </div>
-    </header>
-
-    <!-- 冒險選單 (古老木牌風格 Tabs) -->
-    <nav class="flex overflow-x-auto no-scrollbar gap-2 mb-8 pb-2 justify-start md:justify-center">
-      <button onclick="switchTab('budget')" id="tab-budget" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md">
-        <span class="text-sm">💰 尋寶分贓帳本</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">雲端 GAS 存檔系統</span>
-      </button>
-      <button onclick="switchTab('timeline')" id="tab-timeline" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
-        <span class="text-sm">📜 14日航海日誌</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">每日行程與慶生</span>
-      </button>
-      <button onclick="switchTab('map')" id="tab-map" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
-        <span class="text-sm">🗺️ 探險航線地圖</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">美西公路自駕線</span>
-      </button>
-      <button onclick="switchTab('food')" id="tab-food" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
-        <span class="text-sm">🍖 荒野補給打卡</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">美西美食 YUM</span>
-      </button>
-      <button onclick="switchTab('prep')" id="tab-prep" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
-        <span class="text-sm">🎒 備戰打包指南</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">行前清單與行李</span>
-      </button>
-      <button onclick="switchTab('toolkit')" id="tab-toolkit" class="flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]">
-        <span class="text-sm">⚙️ 冒險生存工具</span>
-        <span class="text-[9px] font-normal opacity-80 mt-0.5">時差對照與換算</span>
-      </button>
-    </nav>
-
-    <!-- ==================== TAB 5: 尋寶分贓帳本 ==================== -->
-    <section id="content-budget" class="space-y-8">
-      
-      <!-- GAS 雲端儲存同步面板 (全新升級：顯示即時連線同步指示燈) -->
-      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge portal-pulse border-2 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-6">
-        <div class="space-y-1">
-          <h2 class="text-xl font-black flex items-center gap-2 text-[#d97706]">
-            <i data-lucide="cloud-lightning" class="w-6 h-6 animate-pulse"></i>
-            雲端同步法陣 (Google Sheet 永久自動同步)
-          </h2>
-          <p class="text-xs text-[#5d4037]/80 italic">
-            「本網頁支援『自動存檔與拉取』。任何記帳、補給打卡與打包變更都會直接在背景悄悄存入 Google Sheet 雲端！」
-          </p>
+      <!-- 操作模式與工具 -->
+      <div class="space-y-3 mb-6">
+        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block">操作工具</span>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btnDrawMode" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500">
+            <i data-lucide="edit-3" class="w-4 h-4"></i> 著色模式
+          </button>
+          <button id="btnPanMode" class="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700">
+            <i data-lucide="grab" class="w-4 h-4"></i> 拖移模式
+          </button>
         </div>
+        <p class="text-[11px] text-slate-500 text-center">💡 提示：按住 <kbd class="px-1 bg-slate-800 rounded text-slate-400">Space 空白鍵</kbd> 或滑鼠中鍵可快速拖移！</p>
+      </div>
 
-        <div class="flex gap-3 justify-end items-center shrink-0">
-          <!-- 背景狀態指示燈 -->
-          <div id="syncStatusBanner" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black bg-[#2a1a15] text-amber-100 border border-[#8b5e3c]/60">
-            <span id="syncStatusIndicator" class="w-2 h-2 rounded-full bg-stone-500"></span>
-            <span id="syncStatusText">偵測雲端狀態中...</span>
-          </div>
-          <button onclick="openGasSetupModal()" class="bg-[#3e2723] hover:bg-black text-[#f5e6d3] p-2.5 rounded-lg text-xs font-black transition-all" title="查看 Google 部署腳本教學">
-            <i data-lucide="help-circle" class="w-4.5 h-4.5"></i>
+      <!-- 座標跳轉與定位 -->
+      <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 mb-6">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-slate-400">目前游標位置</span>
+          <span id="coordDisplay" class="text-xs text-cyan-400 font-mono">(500, 500)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" id="gotoX" placeholder="X (0-999)" min="0" max="999" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-xs text-white font-mono focus:outline-none focus:border-cyan-500">
+          <input type="number" id="gotoY" placeholder="Y (0-999)" min="0" max="999" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-1.5 px-2 text-center text-xs text-white font-mono focus:outline-none focus:border-cyan-500">
+          <button id="btnGoto" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-lg text-slate-300 border border-slate-700 transition">
+            <i data-lucide="locate" class="w-4 h-4"></i>
           </button>
         </div>
       </div>
 
-      <!-- 記帳控制區 -->
-      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h2 class="text-2xl font-black flex items-center gap-2 text-[#5d4037]">
-            <i data-lucide="feather" class="w-6 h-6 text-[#8b5e3c]"></i>
-            黃金分贓大卷軸 (真實探險版)
-          </h2>
-          <p class="text-xs text-[#5d4037]/80 mt-1 italic">
-            「Chris、Steve、Orinda、Jamilee 的真實帳本。所有欄位均為零支出，等待大夥開闢公路新世界！」
-          </p>
-        </div>
-        
-        <div class="flex flex-wrap gap-2">
-          <button onclick="exportData()" class="flex items-center gap-1.5 bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-md">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i> 導出本地備份 (JSON)
-          </button>
-          <label class="flex items-center gap-1.5 bg-[#5d4037] hover:bg-[#3e2723] text-amber-50 px-3 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all shadow-md">
-            <i data-lucide="upload" class="w-3.5 h-3.5"></i> 載入本地備份
-            <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+      <!-- 模擬 AI 社群繪製 (本地模擬，不影響雲端) -->
+      <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-3 mb-6">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-slate-400">本地 AI 靈感助手</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggleAI" class="sr-only peer">
+            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
           </label>
         </div>
+        <p class="text-[11px] text-slate-500">開啟後，本地 AI 會在你的畫布視野內隨機繪製斑駁色彩，幫助激發靈感（此動作僅存在於你的瀏覽器，不寫入雲端數據）。</p>
       </div>
+    </div>
 
-      <!-- 記帳主面板三足鼎立 -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- 左欄：冒險名冊 -->
-        <div class="lg:col-span-4 space-y-6">
-          <div class="parchment p-6 rounded-2xl burnt-edge">
-            <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
-              <i data-lucide="compass" class="w-5 h-5 text-[#8b5e3c]"></i>
-              冒險者隊員名冊
-            </h3>
-            
-            <form onsubmit="addMember(event)" class="flex gap-2 mb-4">
-              <input type="text" id="newMemberInput" placeholder="輸入新成員名..." class="flex-1 bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none placeholder-[#8b5e3c]/40 text-[#3e2723]">
-              <button type="submit" class="bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 text-xs font-black px-4 py-2.5 rounded-lg transition-all">
-                加入
-              </button>
-            </form>
-
-            <div id="membersList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
-              <!-- JS 動態生成 -->
-            </div>
-            <p id="memberWarning" class="text-[10px] text-rose-800 italic mt-2 hidden">⚠️ 隊伍不可空無一人！</p>
-          </div>
-
-          <div class="bg-[#e8d0b5]/50 border border-[#8b5e3c]/40 p-5 rounded-2xl space-y-2 text-xs text-[#5d4037]">
-            <h4 class="font-black flex items-center gap-1.5 text-[#3e2723]">
-              <i data-lucide="shield-alert" class="w-4 h-4"></i> 自駕計費指南
-            </h4>
-            <p class="leading-relaxed italic">
-              美國自駕常會產生 **過路費 (FasTrak)** 與多次 **加油費用 (Gas)**，最適合全部登錄在此，等回台灣或旅行最後一天一鍵清算。
-            </p>
-          </div>
-        </div>
-
-        <!-- 中欄：新增帳單 -->
-        <div class="lg:col-span-4">
-          <div id="expenseFormCard" class="parchment p-6 rounded-2xl burnt-edge h-full relative">
-            
-            <!-- 印章動畫層 -->
-            <div id="stampOverlay" class="absolute inset-0 bg-rose-900/10 z-50 hidden items-center justify-center pointer-events-none">
-              <div class="stamp-mark border-4 border-rose-700 text-rose-700 font-extrabold text-2xl rotate-12 px-6 py-2 rounded-lg bg-white/95 shadow-2xl">
-                ⚖️ 記帳認證
-              </div>
-            </div>
-
-            <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
-              <i data-lucide="feather" class="w-5 h-5 text-[#8b5e3c]"></i>
-              登記本次開銷
-            </h3>
-            
-            <form onsubmit="addExpense(event)" class="space-y-4">
-              <div>
-                <label class="block text-xs font-black text-[#5d4037] mb-1">🪙 帳目大名 (如：租車、晚餐、過路費)</label>
-                <input type="text" id="expTitle" required placeholder="請輸入開銷說明..." class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-black text-[#5d4037] mb-1">💰 金額 ($ 美元)</label>
-                  <input type="number" step="0.01" id="expAmount" required placeholder="0.00" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
-                </div>
-                <div>
-                  <label class="block text-xs font-black text-[#5d4037] mb-1">🏷️ 類別</label>
-                  <select id="expCategory" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
-                    <option value="交通">🚗 交通自駕</option>
-                    <option value="餐飲">🍴 荒野補給</option>
-                    <option value="門票">🎟️ 景點門票</option>
-                    <option value="住宿">🏡 沙漠營地</option>
-                    <option value="其他">📦 探險雜支</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-xs font-black text-[#5d4037] mb-1">👤 先掏出金幣的人 (墊款者)</label>
-                <select id="expPayer" class="w-full bg-[#fbf8f3] border-2 border-[#8b5e3c]/50 text-xs font-bold p-2.5 rounded-lg focus:border-[#8b5e3c] focus:outline-none text-[#3e2723]">
-                  <!-- JS 動態生成 -->
-                </select>
-              </div>
-
-              <button type="submit" class="w-full bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 font-black py-3 px-4 rounded-xl text-xs transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
-                <i data-lucide="coins" class="w-4 h-4 animate-bounce"></i>
-                將此筆費用蓋印登帳
-              </button>
-            </form>
-          </div>
-        </div>
-
-        <!-- 右欄：黃金總帳看板 -->
-        <div class="lg:col-span-4 space-y-6">
-          <div class="bg-[#3e2723] text-[#f5e6d3] p-6 rounded-2xl border-2 border-[#8b5e3c] shadow-2xl text-center relative overflow-hidden">
-            <div class="absolute top-0 right-0 opacity-10 text-8xl font-black">👑</div>
-            <span class="text-[10px] text-amber-300 uppercase tracking-widest font-black">💰 旅途消耗黃金總量</span>
-            <h3 id="totalExpensesDisplay" class="text-4xl font-extrabold mt-1.5 text-amber-100">$0.00</h3>
-            <div class="text-[10px] text-stone-300 mt-0.5">USD (美元金幣)</div>
-            
-            <div class="border-t border-[#8b5e3c]/60 mt-4 pt-4">
-              <span id="averageLabel" class="text-[10px] text-amber-300 uppercase tracking-widest font-black">⚖️ 每人應平攤</span>
-              <h4 id="avgExpensesDisplay" class="text-2xl font-extrabold mt-1 text-amber-300">$0.00</h4>
-            </div>
-          </div>
-
-          <!-- 出資平衡表 -->
-          <div class="parchment p-5 rounded-2xl burnt-edge">
-            <h4 class="font-black text-xs text-[#5d4037] mb-3 border-b border-[#8b5e3c]/30 pb-1.5 flex items-center gap-1.5">
-              <i data-lucide="bar-chart-3" class="w-4 h-4 text-[#8b5e3c]"></i>
-              每人分贓平衡狀況
-            </h4>
-            <div id="balanceSheet" class="space-y-2 text-xs">
-              <!-- JS 動態生成 -->
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- 下半大版塊：歷史明細與最優清償指南 -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- 左：歷史明細 -->
-        <div class="lg:col-span-7 parchment p-6 rounded-2xl burnt-edge">
-          <h3 class="font-black text-base border-b border-[#8b5e3c]/30 pb-2 mb-4 flex items-center gap-2 text-[#5d4037]">
-            <i data-lucide="scroll" class="w-5 h-5 text-[#8b5e3c]"></i>
-            羊皮紙歷史明細 
-            <span id="expenseCount" class="text-xs bg-[#8b5e3c] text-amber-50 font-black px-2.5 py-0.5 rounded-full ml-1">0 筆</span>
-          </h3>
-          
-          <div id="expensesHistoryList" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-            <!-- JS 動態生成 -->
-          </div>
-        </div>
-
-        <!-- 右：最優清算配對 (貪婪最小流算法) -->
-        <div class="lg:col-span-5">
-          <div class="parchment p-6 rounded-2xl border-4 border-double border-[#8b5e3c] bg-gradient-to-b from-[#f9f2e7] to-[#e6ccb2] h-full flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between border-b border-[#8b5e3c]/30 pb-2 mb-4">
-                <h3 class="font-black text-sm flex items-center gap-1.5 text-[#5d4037]">
-                  <i data-lucide="compass" class="w-4 h-4"></i> 債務清償結算 (分贓最速路徑)
-                </h3>
-                <button onclick="copyDebtsToClipboard()" class="bg-[#8b5e3c] hover:bg-[#3e2723] text-amber-50 text-[10px] font-black px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                  <i data-lucide="share-2" class="w-3.5 h-3.5"></i> 抄寫並分享
-                </button>
-              </div>
-
-              <div id="optimizedDebtsList" class="space-y-3">
-                <!-- JS 動態生成最小轉帳步驟 -->
-              </div>
-            </div>
-
-            <p class="text-[10px] text-stone-600 italic text-center mt-6 pt-4 border-t border-[#8b5e3c]/20">
-              📢 每次增刪記帳，黃金羅盤均會自動重新進行最佳化清算配對！
-            </p>
-          </div>
-        </div>
-
-      </div>
-
-    </section>
-
-    <!-- ==================== TAB 1: 14天每日行程 (Timeline) ==================== -->
-    <section id="content-timeline" class="hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <!-- 左：天數快選 -->
-        <div class="lg:col-span-4 space-y-4">
-          <div class="parchment p-5 rounded-2xl burnt-edge">
-            <h3 class="font-black text-slate-800 flex items-center gap-2 mb-3 text-sm">
-              <i data-lucide="calendar" class="w-4 h-4 text-amber-800"></i>
-              航行大誌
-            </h3>
-            <div id="dayGridSelector" class="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-4 gap-2">
-              <!-- JS 動態生成天數格子 -->
-            </div>
-          </div>
-
-          <!-- 壽星指示 -->
-          <div class="bg-gradient-to-br from-rose-50 to-orange-50 p-5 rounded-2xl border border-rose-200/60 shadow-sm relative overflow-hidden">
-            <div class="absolute top-2 right-2 text-4xl opacity-20">🎂</div>
-            <h4 class="font-black text-rose-800 text-xs flex items-center gap-1.5">
-              <i data-lucide="gift" class="w-4 h-4 text-rose-600"></i> 旅途驚喜慶生日曆
-            </h4>
-            <div class="mt-3 space-y-2 text-xs">
-              <div onclick="selectDay(2)" class="flex items-center justify-between bg-white/85 p-2 rounded-lg cursor-pointer hover:bg-white border border-amber-100 transition-all">
-                <div>
-                  <span class="text-[10px] font-bold text-rose-700">Day 3 (05/25)</span>
-                  <p class="font-black text-stone-800">🎂 Chris 生日大驚喜</p>
-                </div>
-                <span class="text-[9px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">約書亞樹</span>
-              </div>
-              <div onclick="selectDay(5)" class="flex items-center justify-between bg-white/85 p-2 rounded-lg cursor-pointer hover:bg-white border border-amber-100 transition-all">
-                <div>
-                  <span class="text-[10px] font-bold text-rose-700">Day 6 (05/28)</span>
-                  <p class="font-black text-stone-800">🎂 Steve 生日大慶典</p>
-                </div>
-                <span class="text-[9px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">大峽谷</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 右：單日詳細資訊 -->
-        <div id="dayDetailCard" class="lg:col-span-8">
-          <!-- JS 動態渲染天數詳細卡片 -->
-        </div>
-
-      </div>
-    </section>
-
-    <!-- ==================== TAB 2: 自駕路線圖 ==================== -->
-    <section id="content-map" class="hidden space-y-6">
-      <div class="parchment p-6 rounded-2xl burnt-edge">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2">
-              <i data-lucide="map" class="w-6 h-6 text-[#8b5e3c]"></i>
-              美西 4 大州自駕藏寶路線圖
-            </h2>
-            <p class="text-stone-700 text-xs mt-1 italic">
-              「點擊黃金錨點，能讓探險越野車在航線上奔馳！並查看該地神祕景點介紹。」
-            </p>
-          </div>
-          <button onclick="playCarHorn()" class="bg-[#8b5e3c] text-amber-50 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#3e2723] flex items-center gap-1">
-            <i data-lucide="volume-2" class="w-4 h-4"></i> 鳴響越野車笛 🚗💨
-          </button>
-        </div>
-
-        <!-- 擬真復古尋寶地圖 SVG -->
-        <div class="mt-6 bg-[#160e0d] p-4 md:p-8 rounded-2xl shadow-inner border border-amber-950 relative overflow-hidden">
-          <div class="absolute inset-0 opacity-5 bg-[radial-gradient(#8b5e3c_1px,transparent_1px)] [background-size:16px_16px]"></div>
-          
-          <div class="relative max-w-2xl mx-auto">
-            <svg viewBox="0 0 800 500" class="w-full h-auto drop-shadow-2xl">
-              <!-- 底層公路連接線 -->
-              <path id="highwayPath" d="M 150,380 L 250,380 L 320,260 L 480,310 L 580,280" fill="none" stroke="#ca8a04" stroke-width="4" stroke-linecap="round" class="map-path-active" />
-              <!-- 國內航線 -->
-              <path d="M 320,260 Q 230,190 150,150" fill="none" stroke="#0ea5e9" stroke-width="3" stroke-dasharray="8,6" opacity="0.6" />
-
-              <!-- 地名大標 -->
-              <text x="80" y="420" fill="#a16207" font-weight="900" font-size="12">洛杉磯 (Day 1-2)</text>
-              <text x="210" y="425" fill="#ca8a04" font-weight="900" font-size="12">約書亞樹🌵 (Day 3)</text>
-              <text x="240" y="235" fill="#ef4444" font-weight="900" font-size="12">拉斯維加斯🎲 (Day 4-5)</text>
-              <text x="440" y="345" fill="#f97316" font-weight="900" font-size="12">大峽谷南口🌲 (Day 6)</text>
-              <text x="560" y="250" fill="#f97316" font-weight="900" font-size="12">佩吉市/羚羊谷✨ (Day 6-8)</text>
-              <text x="80" y="130" fill="#06b6d4" font-weight="900" font-size="12">舊金山金門大橋🌉 (Day 8-12)</text>
-
-              <!-- 動態前進小車標誌 -->
-              <g id="mapCarGroup" transform="translate(150,380) scale(1.5)" class="transition-all duration-1000 ease-out">
-                <circle cx="0" cy="0" r="10" fill="#ef4444" opacity="0.3" class="animate-ping" />
-                <text x="-6" y="5" font-size="14">🚗</text>
-              </g>
-
-              <!-- 錨點1: 洛杉磯 -->
-              <g onclick="driveToPoint(150, 380, 0)" class="cursor-pointer group">
-                <circle cx="150" cy="380" r="12" fill="#eab308" class="group-hover:scale-125 transition-all" />
-                <circle cx="150" cy="380" r="6" fill="#3e2723" />
-              </g>
-
-              <!-- 錨點2: 約書亞樹 -->
-              <g onclick="driveToPoint(250, 380, 2)" class="cursor-pointer group">
-                <circle cx="250" cy="380" r="12" fill="#ca8a04" class="group-hover:scale-125 transition-all" />
-                <circle cx="250" cy="380" r="6" fill="#3e2723" />
-              </g>
-
-              <!-- 錨點3: 拉斯維加斯 -->
-              <g onclick="driveToPoint(320, 260, 3)" class="cursor-pointer group">
-                <circle cx="320" cy="260" r="12" fill="#ef4444" class="group-hover:scale-125 transition-all" />
-                <circle cx="320" cy="260" r="6" fill="#3e2723" />
-              </g>
-
-              <!-- 錨點4: 大峽谷 -->
-              <g onclick="driveToPoint(480, 310, 5)" class="cursor-pointer group">
-                <circle cx="480" cy="310" r="12" fill="#f97316" class="group-hover:scale-125 transition-all" />
-                <circle cx="480" cy="310" r="6" fill="#3e2723" />
-              </g>
-
-              <!-- 錨點5: 佩吉市 -->
-              <g onclick="driveToPoint(580, 280, 6)" class="cursor-pointer group">
-                <circle cx="580" cy="280" r="12" fill="#f97316" class="group-hover:scale-125 transition-all" />
-                <circle cx="580" cy="280" r="6" fill="#3e2723" />
-              </g>
-
-              <!-- 錨點6: 舊金山 -->
-              <g onclick="driveToPoint(150, 150, 8)" class="cursor-pointer group">
-                <circle cx="150" cy="150" r="14" fill="#06b6d4" class="group-hover:scale-125 transition-all" />
-                <circle cx="150" cy="150" r="6" fill="#3e2723" />
-              </g>
-            </svg>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 3: 荒野補給美食 ==================== -->
-    <section id="content-food" class="hidden space-y-6">
-      <div class="parchment p-6 md:p-8 rounded-2xl burnt-edge">
-        <div class="flex justify-between items-center border-b border-[#8b5e3c]/30 pb-4 mb-6">
-          <div>
-            <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2 animate-bounce">
-              <i data-lucide="utensils" class="w-6 h-6 text-[#8b5e3c]"></i>
-              美西公路大補給清單
-            </h2>
-            <p class="text-stone-700 text-xs italic">「大夥在美西公路開車，每吃到一個必吃名產，別忘了點擊勾選打卡解鎖！」</p>
-          </div>
-          <div id="foodProgressBadge" class="bg-[#8b5e3c] text-amber-50 px-3.5 py-1 rounded-full text-xs font-black shadow-lg">
-            解鎖進度: 0 / 8
-          </div>
-        </div>
-
-        <div id="foodGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <!-- JS 動態渲染卡牌 -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 4: 備戰打包指南 ==================== -->
-    <section id="content-prep" class="hidden space-y-6">
-      <div class="parchment p-6 rounded-2xl burnt-edge">
-        <h2 class="text-xl md:text-2xl font-black text-[#3e2723] flex items-center gap-2">
-          <i data-lucide="briefcase" class="w-5 h-5 text-[#8b5e3c]"></i>
-          美國自駕出入境隨身安檢包
-        </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div class="bg-rose-50/60 border border-rose-200 p-4 rounded-xl text-xs space-y-2 text-rose-950">
-            <h4 class="font-black flex items-center gap-1.5 text-rose-900"><i data-lucide="shield-check" class="w-4 h-4"></i> 證照文件與金流</h4>
-            <ul class="list-disc pl-4 space-y-1 text-rose-900/80 italic font-bold">
-              <li>確認台灣護照正本效期是否滿 6 個月以上！</li>
-              <li>ESTA 電子簽證許可：務必確認通過狀態，列印紙本備用！</li>
-              <li>自駕保命索：台灣駕照 + 國際駕照雙證缺一不可！</li>
-            </ul>
-          </div>
-          <div class="bg-amber-50/60 border border-amber-200 p-4 rounded-xl text-xs space-y-2 text-amber-950">
-            <h4 class="font-black flex items-center gap-1.5 text-amber-900"><i data-lucide="alert-triangle" class="w-4 h-4"></i> TSA 隨身攜帶液體限制</h4>
-            <p class="italic text-amber-900/80 leading-relaxed font-bold">
-              每位旅客限帶一個 <strong>1公升容量(約20x20cm)且可重複密封的透明塑膠袋</strong>。所有液體、膠狀物品容器必須 <strong>≤ 100ml (3.4盎司)</strong>，安檢時需單獨取出手檢！
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 行理打包進度格 -->
-      <div class="parchment p-6 rounded-2xl burnt-edge">
-        <div class="flex justify-between items-center border-b border-[#8b5e3c]/30 pb-3 mb-6">
-          <h3 class="font-black text-[#3e2723] text-sm flex items-center gap-2">
-            <i data-lucide="check-square" class="w-4 h-4 text-[#8b5e3c]"></i>
-            冒險家行前打包進度格
-          </h3>
-          <span id="packProgressBadge" class="bg-[#8b5e3c] text-amber-50 text-[10px] font-black px-2.5 py-1 rounded">
-            已裝箱：0 / 10
-          </span>
-        </div>
-
-        <div id="prepItemsGrid" class="space-y-6">
-          <!-- JS 依類別動態渲染打勾方格 -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== TAB 6: 求生工具箱 ==================== -->
-    <section id="content-toolkit" class="hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-        <!-- 時差對照 -->
-        <div class="parchment p-6 rounded-2xl burnt-edge text-stone-900 space-y-4">
-          <h3 class="font-black text-[#3e2723] flex items-center gap-2 text-base">
-            <i data-lucide="clock" class="w-5 h-5 text-[#8b5e3c]"></i>
-            太平洋/山區夏令時間對照晷
-          </h3>
-          <p class="text-xs text-stone-600 italic">
-            「拖曳台灣日晷，能算出美西太平洋沿岸(洛杉磯、舊金山、拉斯維加斯)與大峽谷山區時間！」
-          </p>
-
-          <div class="bg-[#fdfaf3] p-5 rounded-xl border-2 border-[#bda387]/50 space-y-4">
-            <div>
-              <label class="block text-xs font-black text-[#5d4037] mb-2">🕛 台灣時光（TPE）：</label>
-              <div class="flex items-center gap-4">
-                <input type="range" id="tpeTimeSlider" min="0" max="23" value="12" class="w-full accent-amber-800 cursor-pointer" oninput="convertTime()">
-                <span id="tpeTimeDisplay" class="font-black text-[#3e2723] text-sm shrink-0 w-12 text-right">12:00</span>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-3 text-center">
-              <div class="bg-white p-3.5 rounded-lg border border-stone-200">
-                <span class="text-[10px] text-stone-500 block font-bold">加州 / 內華達 (PDT)</span>
-                <span id="pdtTimeDisplay" class="text-lg font-black text-amber-800 block mt-1">21:00</span>
-                <span id="pdtDayLabel" class="text-[9px] text-stone-400 font-bold">前一天</span>
-              </div>
-              <div class="bg-white p-3.5 rounded-lg border border-stone-200">
-                <span class="text-[10px] text-stone-500 block font-bold">亞利桑那 (MST)</span>
-                <span id="mstTimeDisplay" class="text-lg font-black text-rose-800 block mt-1">21:00</span>
-                <span id="mstDayLabel" class="text-[9px] text-stone-400 font-bold">前一天</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 單位指南針 -->
-        <div class="parchment p-6 rounded-2xl burnt-edge text-stone-900 space-y-4">
-          <h3 class="font-black text-[#3e2723] flex items-center gap-2 text-base">
-            <i data-lucide="compass" class="w-5 h-5 text-[#8b5e3c]"></i>
-            美國自駕求生單位指南針
-          </h3>
-          <p class="text-xs text-stone-600 italic">美國的限速是英里(Mile)，加油加加侖(Gallon)，天氣預報是華氏(°F)，快用天平快速對照！</p>
-          
-          <div class="space-y-3.5 text-xs font-bold">
-            <!-- 溫度 -->
-            <div class="bg-[#fdfaf3] p-3 rounded-xl border border-[#bda387]/40">
-              <span class="text-[10px] text-stone-500 block mb-1">華氏溫度 ⇄ 攝氏溫度 (°F ⇄ °C)</span>
-              <div class="flex items-center gap-3">
-                <input type="number" id="fVal" value="77" oninput="calcUnit('F')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
-                <span>°F ⇄</span>
-                <input type="number" id="cVal" value="25" oninput="calcUnit('C')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
-                <span>°C</span>
-              </div>
-            </div>
-
-            <!-- 公里英里 -->
-            <div class="bg-[#fdfaf3] p-3 rounded-xl border border-[#bda387]/40">
-              <span class="text-[10px] text-stone-500 block mb-1">公路里程與限速 (Mile ⇄ KM)</span>
-              <div class="flex items-center gap-3">
-                <input type="number" id="mileVal" value="100" oninput="calcUnit('M')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
-                <span>英里 ⇄</span>
-                <input type="number" id="kmVal" value="160.9" oninput="calcUnit('K')" class="w-full p-2 bg-white border border-stone-300 rounded text-center font-black">
-                <span>公里</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </section>
-
-  </div>
-
-  <!-- GAS 雲端同步設定與腳本教學 Modal -->
-  <div id="gasSetupModal" class="fixed inset-0 bg-black/70 z-[10001] hidden flex items-center justify-center p-4">
-    <div class="bg-[#fbf2e3] border-4 border-[#8b5e3c] max-w-2xl w-full max-h-[85vh] overflow-y-auto rounded-2xl shadow-2xl p-6 relative text-[#3e2723]">
-      <button onclick="closeGasSetupModal()" class="absolute top-4 right-4 text-stone-600 hover:text-black">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <!-- 底部功能按鈕 -->
+    <div class="space-y-2 mt-4">
+      <button id="btnSave" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition border border-slate-700">
+        <i data-lucide="download" class="w-4 h-4"></i> 匯出 1000x1000 完整作品
       </button>
+      <button id="btnResetView" class="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-850 hover:bg-slate-800 text-slate-400 text-xs transition">
+        重設視角至中心
+      </button>
+    </div>
+  </aside>
 
-      <h3 class="text-xl font-black flex items-center gap-2 text-amber-800 border-b border-[#8b5e3c]/30 pb-2 mb-4">
-        <i data-lucide="settings" class="w-5 h-5"></i>
-        GAS 雲端資料同步魔法部署教學
-      </h3>
+  <!-- 右側主要畫布工作區 -->
+  <main class="flex-1 relative bg-slate-950 flex flex-col justify-between overflow-hidden">
+    <!-- 畫布容器 -->
+    <div id="canvasContainer" class="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden">
+      <!-- 實際畫布（使用 JS 動態控制 Pan & Zoom） -->
+      <canvas id="mainCanvas" class="absolute top-0 left-0 origin-top-left"></canvas>
+      
+      <!-- 畫布加載中提示 -->
+      <div id="loadingOverlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center gap-4 z-20">
+        <div class="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
+        <p id="loadingText" class="text-sm text-cyan-400 font-bold tracking-widest animate-pulse">正在安全連接雲端像素伺服器...</p>
+      </div>
 
-      <div class="space-y-4 text-xs md:text-sm font-sans text-stone-800 leading-relaxed">
-        <p class="font-bold text-amber-900">
-          透過 Google Sheets 作為永久資料庫，不僅完全免費，更不需要繁瑣的伺服器註冊！
-        </p>
-        
-        <div class="bg-amber-100/60 p-3 rounded-lg border border-amber-300">
-          <span class="font-extrabold block text-amber-950 mb-1">💡 快速 3 步建立你的雲端存檔：</span>
-          <ol class="list-decimal pl-4 space-y-1 font-bold text-amber-900">
-            <li>開啟一個全新的 <a href="https://sheets.new" target="_blank" class="underline text-blue-700">Google 試算表 (Google Sheet)</a>。</li>
-            <li>在選單點擊 <strong>「延伸模組」➔「Apps Script」</strong>。</li>
-            <li>將原本編輯器裡面的程式碼全部刪除，並貼上下方複製好的「魔法代碼」，接著點擊 <strong>「部署」➔「新增部署」➔「網頁應用程式」</strong>！</li>
-          </ol>
+      <!-- 冷卻中顯示的半透明遮罩 -->
+      <div id="cooldownTimer" class="absolute top-4 right-4 bg-slate-900/90 border border-slate-800 py-2 px-4 rounded-xl shadow-2xl flex items-center gap-3 z-10 pointer-events-none opacity-0 transition-opacity duration-300">
+        <div class="relative w-8 h-8 flex items-center justify-center">
+          <svg class="w-full h-full transform -rotate-90">
+            <circle cx="16" cy="16" r="14" stroke="#1e293b" stroke-width="3" fill="transparent"/>
+            <circle id="cooldownProgress" cx="16" cy="16" r="14" stroke="#ef4444" stroke-width="3" fill="transparent" stroke-dasharray="88" stroke-dashoffset="0"/>
+          </svg>
+          <span id="cooldownSeconds" class="absolute text-xs font-black text-rose-500">5</span>
         </div>
-
-        <div class="space-y-1.5">
-          <span class="font-bold block text-stone-700">部署設定（非常關鍵）：</span>
-          <ul class="list-disc pl-4 space-y-1 text-xs">
-            <li><strong>執行身分：</strong> 選擇「我 (Me)」</li>
-            <li><strong>誰有權限存取：</strong> 選擇「任何人 (Anyone)」</li>
-          </ol>
+        <div class="text-left">
+          <div class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">冷卻中</div>
+          <div class="text-xs text-slate-300">請等待世界重載...</div>
         </div>
-
-        <!-- 複製代碼區 -->
-        <div class="relative">
-          <div class="flex justify-between items-center bg-[#2a1a15] text-amber-100 text-xs px-4 py-2 rounded-t-lg">
-            <span>Google Apps Script 原始碼 (.gs)</span>
-            <button onclick="copyGasCode()" class="bg-[#8b5e3c] hover:bg-amber-700 text-white font-bold px-2 py-1 rounded transition-all text-[10px]">
-              一鍵複製代碼
-            </button>
-          </div>
-          <pre id="gasCodeBlock" class="bg-[#1a0f0d] text-emerald-400 p-4 rounded-b-lg overflow-x-auto text-[10px] font-mono leading-relaxed max-h-48 overflow-y-auto">
-function doGet() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getRange(1, 1, Math.max(sheet.getLastRow(), 1), 1).getValues();
-  var payload = data.length > 0 && data[0][0] ? data[0][0] : "{}";
-  return ContentService.createTextOutput(payload)
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  var postData = e.postData.contents;
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.clear();
-  sheet.getRange(1, 1).setValue(postData);
-  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
-    .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-        </div>
-
-        <p class="text-xs text-rose-800 font-bold">
-          ⚠️ 部署完成後，將複製回來的「網頁應用程式網址」，直接寫死貼到程式碼最前方的 <code>const GAS_URL = "您的網址"</code> 變數中，大夥兒就能直接享有一鍵永久保存同步功能！
-        </p>
       </div>
     </div>
+
+    <!-- 底部調色盤區 -->
+    <div class="bg-slate-900 border-t border-slate-800 p-4 flex flex-col items-center gap-3 z-10 shadow-2xl shrink-0">
+      <div class="w-full max-w-4xl flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">選擇色彩</span>
+        <div class="flex items-center gap-1.5 bg-slate-950/60 px-2 py-1 rounded-lg border border-slate-800">
+          <span class="text-[10px] text-slate-500">已選顏色:</span>
+          <span id="colorHexText" class="text-xs font-mono text-cyan-400 uppercase">#FF4500</span>
+          <span id="colorPreview" class="w-3.5 h-3.5 rounded bg-[#ff4500] border border-white/20"></span>
+        </div>
+      </div>
+      
+      <!-- 滾動色塊容器 -->
+      <div id="palette" class="w-full max-w-4xl flex gap-2 overflow-x-auto pb-1 justify-start md:justify-center">
+        <!-- JS 動態渲染色塊 -->
+      </div>
+    </div>
+  </main>
+
+  <!-- 簡易自定義通知彈窗 -->
+  <div id="toast" class="fixed bottom-24 right-4 bg-slate-900 border border-cyan-500/30 text-cyan-400 text-sm py-2 px-4 rounded-xl shadow-2xl pointer-events-none opacity-0 transition-opacity duration-300 z-50 flex items-center gap-2">
+    <i data-lucide="info" class="w-4 h-4"></i>
+    <span id="toastText">訊息提示</span>
   </div>
 
-  <!-- 擬古底欄 -->
-  <footer class="bg-[#2a1a15] border-t-8 border-[#8b5e3c] py-12 text-[#e6ccb2] text-xs text-center mt-12">
-    <div class="max-w-6xl mx-auto px-4 space-y-3">
-      <p class="font-extrabold tracking-widest text-amber-200 text-sm">🏔️ 美西跨州自駕公路大冒險 🚗💨</p>
-      <p class="opacity-80 italic">「橫越加州與亞利桑那紅土荒漠，願大夥滿載黃金般珍貴的回憶而歸！」</p>
-      <p class="text-[10px] opacity-40 font-mono">© 2026 West Coast Road Trip. Designed for Chris & Steve Birthday Celebration.</p>
-    </div>
-  </footer>
+  <!-- Firebase 11.6.1 SDK 模組導入 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  <script>
-    // ==================== 0. 全域硬編碼同步網址設定 (GAS_URL) ====================
-    // 👈 貼心的自動同步核心：請在這裡填入您的 Google Apps Script 網頁應用程式 URL
-    // 網頁一打開便會自動讀取雲端、任何記帳與打卡修改也會自動無聲同步至您的 Google Sheet 試算表！
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxx2NGXpG9kXzt9z6gMeTvzio4UhSCvnU4XPCheTdtqXCiX8yvfa-mkhMJk7zl31GKE8g/exec"; 
+    // --- 1. 初始化 Lucide 圖標 ---
+    lucide.createIcons();
 
-    // ==================== 音效合成模組 (Web Audio API) ====================
-    let audioCtx = null;
+    // --- 2. 遊戲常數設定 ---
+    const GRID_SIZE = 1000;       // 1000x1000 百萬畫布
+    const CHUNK_SIZE = 100;       // 將畫布分割為 10x10 個 100x100 的分塊(Chunks)
+    const COOLDOWN_TIME = 3000;   // 每次繪製的冷卻時間：3 秒 (即時版建議 3 秒以內提高趣味)
+    
+    // 官方經典 r/place 豐富調色盤
+    const COLORS = [
+      '#FF4500', '#FFA800', '#FFD635', '#00A368', '#7EED56', '#2450A4', '#3690EA', 
+      '#51E9F4', '#811E9F', '#B44AC0', '#FF99AA', '#9C6926', '#000000', '#898D90', '#D4D7D9', '#FFFFFF',
+      '#94B3FF', '#493AC1', '#6A5CFF', '#E4ABFF', '#DE1073', '#FF3881', '#941000', '#E50000',
+      '#FFB470', '#00756F', '#00CC78', '#008525', '#004313', '#0052FF', '#003056'
+    ];
+    const uniqueColors = [...new Set(COLORS)];
 
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // 系統變數
+    let activeColor = uniqueColors[0];
+    let isDrawMode = true;
+    let isSpacePressed = false;
+
+    // 畫布操作狀態 (Pan & Zoom)
+    let scale = 1.0;
+    let offsetX = 0;
+    let offsetY = 0;
+    let isDragging = false;
+    let startX = 0, startY = 0;
+
+    // 冷卻與使用者狀態
+    let lastPaintTime = 0;
+    let cooldownInterval = null;
+    let currentUser = null;
+
+    // --- 3. 獲取環境變數與 Firebase 初始化 ---
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'real-place-game';
+    const firebaseConfig = JSON.parse(__firebase_config);
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- 4. 初始化畫布系統 ---
+    const mainCanvas = document.getElementById('mainCanvas');
+    const mainCtx = mainCanvas.getContext('2d');
+    const container = document.getElementById('canvasContainer');
+
+    // 離屏畫布：在記憶體中維護最即時完整的 1000x1000 畫面
+    const virtualCanvas = document.createElement('canvas');
+    virtualCanvas.width = GRID_SIZE;
+    virtualCanvas.height = GRID_SIZE;
+    const vCtx = virtualCanvas.getContext('2d');
+
+    // 預先繪製純白底
+    vCtx.fillStyle = '#FFFFFF';
+    vCtx.fillRect(0, 0, GRID_SIZE, GRID_SIZE);
+
+    // --- 5. Firebase 身份驗證與即時監聽 (核心機制) ---
+    const initAuthAndSync = async () => {
+      try {
+        document.getElementById('loadingText').textContent = "正在取得安全令牌...";
+        
+        // 優先使用自訂 Custom Token 登入
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth failed, retrying anonymous:", error);
+        await signInAnonymously(auth);
+      }
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        document.getElementById('artistId').textContent = user.uid.substring(0, 8) + '...';
+        
+        // 進入連線成功狀態
+        updateStatusIndicator('connected');
+        showToast('🟢 雲端同步系統已建立安全連線！', 'success');
+
+        // 開始向 Firestore 進行全圖即時雙向監聽 (Rule 1 & Rule 2)
+        startRealtimeListener();
+      } else {
+        updateStatusIndicator('disconnected');
+      }
+    });
+
+    // 啟動監聽分塊資料
+    function startRealtimeListener() {
+      document.getElementById('loadingText').textContent = "正在載入世界像素畫布...";
+      
+      // 指向嚴格規定的 Public Path (Rule 1)
+      const dataCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'chunks');
+
+      // 監聽此集合的任何變化 (Rule 2: 不含任何 compound query)
+      onSnapshot(dataCollectionRef, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const docData = change.doc.data();
+          const docId = change.doc.id; // 格式如 chunk_3_4
+          
+          const parts = docId.split('_');
+          if (parts.length === 3 && parts[0] === 'chunk') {
+            const cx = parseInt(parts[1]);
+            const cy = parseInt(parts[2]);
+            
+            if (!isNaN(cx) && !isNaN(cy)) {
+              renderChunkData(cx, cy, docData.p || {});
+            }
+          }
+        });
+
+        // 首次加載完成後關閉 Loading 遮罩
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (!loadingOverlay.classList.contains('hidden')) {
+          loadingOverlay.classList.add('hidden');
+          resetViewToCenter();
+        }
+
+        draw();
+      }, (error) => {
+        console.error("Firestore sync error:", error);
+        showToast('❌ 同步錯誤，請重整網頁', 'error');
+      });
+    }
+
+    // 將分塊的像素數據繪製到離屏虛擬畫布上
+    function renderChunkData(cx, cy, pixels) {
+      const startX = cx * CHUNK_SIZE;
+      const startY = cy * CHUNK_SIZE;
+
+      // 清空該分塊區域回白色
+      vCtx.fillStyle = '#FFFFFF';
+      vCtx.fillRect(startX, startY, CHUNK_SIZE, CHUNK_SIZE);
+
+      // 依序著色有紀錄的像素
+      Object.entries(pixels).forEach(([indexStr, color]) => {
+        const index = parseInt(indexStr);
+        const localX = index % CHUNK_SIZE;
+        const localY = Math.floor(index / CHUNK_SIZE);
+        
+        vCtx.fillStyle = color;
+        vCtx.fillRect(startX + localX, startY + localY, 1, 1);
+      });
+    }
+
+    // 更新連線狀態燈號 UI
+    function updateStatusIndicator(status) {
+      const statusDot = document.getElementById('statusDot');
+      const pingRing = document.getElementById('pingRing');
+      const text = document.getElementById('connectionStatus');
+
+      if (status === 'connected') {
+        statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-emerald-500";
+        pingRing.className = "animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75";
+        text.textContent = "即時同步中";
+        text.className = "text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-emerald-400";
+      } else if (status === 'disconnected') {
+        statusDot.className = "relative inline-flex rounded-full h-3 w-3 bg-rose-500";
+        pingRing.className = "";
+        text.textContent = "已中斷";
+        text.className = "text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-rose-400";
       }
     }
 
-    function playCoinSound() {
-      initAudio();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(987.77, now); // B5
-      osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.08); // E6
-      
-      gain.gain.setValueAtTime(0.15, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.3);
-    }
-
-    function playStampSound() {
-      initAudio();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(120, now);
-      osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-      
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
-      
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      osc.start(now);
-      osc.stop(now + 0.2);
-    }
-
-    function playCarHorn() {
-      initAudio();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      
-      const osc1 = audioCtx.createOscillator();
-      const osc2 = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      
-      osc1.type = 'sawtooth';
-      osc1.frequency.setValueAtTime(440, now);
-      
-      osc2.type = 'sawtooth';
-      osc2.frequency.setValueAtTime(445, now);
-      
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.setValueAtTime(0.1, now + 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-      
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(audioCtx.destination);
-      
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + 0.35);
-      osc2.stop(now + 0.35);
-    }
-
-    // ==================== 開場啟封 startGame 函數 ====================
-    function startGame() {
-      playStampSound();
-      const intro = document.getElementById('gameIntro');
-      if (intro) {
-        intro.style.opacity = '0';
-        setTimeout(() => {
-          intro.style.display = 'none';
-        }, 1000);
+    // --- 6. 點擊上傳像素至雲端 (Rule 3) ---
+    async function uploadPixel(x, y, color) {
+      if (!currentUser) {
+        showToast('🔒 正在建立雲端連線，請稍後...', 'error');
+        return;
       }
-      initAudio();
+
+      const now = Date.now();
+      if (now - lastPaintTime < COOLDOWN_TIME) {
+        showToast('🎨 像素冷卻中，請稍候再點擊！', 'error');
+        playSynthSound(150, 'triangle', 0.15);
+        return;
+      }
+
+      // 1. 計算該座標屬於哪個分塊 (Chunk)
+      const cx = Math.floor(x / CHUNK_SIZE);
+      const cy = Math.floor(y / CHUNK_SIZE);
+      const localX = x % CHUNK_SIZE;
+      const localY = y % CHUNK_SIZE;
+      const localIndex = localY * CHUNK_SIZE + localX;
+
+      const chunkId = `chunk_${cx}_${cy}`;
+      
+      // 2. 嚴格對準 Public Data Path (Rule 1)
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'chunks', chunkId);
+
+      // 本地先繪製，帶來完美即時回饋感 (Optimistic UI Update)
+      vCtx.fillStyle = color;
+      vCtx.fillRect(x, y, 1, 1);
+      draw();
+      playSynthSound(600, 'sine', 0.08);
+      startCooldown();
+
+      try {
+        // 3. 上傳至雲端（使用動態巢狀欄位更新，若無此文檔則自動 merge 建立）
+        await setDoc(docRef, {
+          p: {
+            [localIndex]: color
+          }
+        }, { merge: true });
+        
+      } catch (error) {
+        console.error("Upload pixel failed:", error);
+        showToast('❌ 寫入雲端發生錯誤，請重試', 'error');
+      }
     }
 
-    // ==================== 物理金幣雨引擎 ====================
-    const canvas = document.getElementById('goldCanvas');
-    const ctx = canvas.getContext('2d');
-    let coins = [];
+    // --- 7. 繪製主畫布 (Pan & Zoom 變換渲染) ---
+    function draw() {
+      mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+      
+      mainCtx.save();
+      // 應用拖曳與縮放矩陣
+      mainCtx.translate(offsetX, offsetY);
+      mainCtx.scale(scale, scale);
+
+      // 關閉平滑化，保證乾淨利落的 8-bit 像素邊緣
+      mainCtx.imageSmoothingEnabled = false;
+      mainCtx.mozImageSmoothingEnabled = false;
+      mainCtx.webkitImageSmoothingEnabled = false;
+      mainCtx.msImageSmoothingEnabled = false;
+
+      // 繪製離屏緩衝畫布
+      mainCtx.drawImage(virtualCanvas, 0, 0);
+
+      // 放大倍率高於 12 時，自動疊加細網格
+      if (scale > 12) {
+        mainCtx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
+        mainCtx.lineWidth = 1 / scale;
+        mainCtx.beginPath();
+        for (let i = 0; i <= GRID_SIZE; i += 1) {
+          mainCtx.moveTo(i, 0);
+          mainCtx.lineTo(i, GRID_SIZE);
+          mainCtx.moveTo(0, i);
+          mainCtx.lineTo(GRID_SIZE, i);
+        }
+        mainCtx.stroke();
+      }
+
+      mainCtx.restore();
+    }
 
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      mainCanvas.width = container.clientWidth;
+      mainCanvas.height = container.clientHeight;
+      draw();
     }
     window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
-    class GoldCoin {
-      constructor(x, y) {
-        this.x = x || Math.random() * canvas.width;
-        this.y = y || -50;
-        this.radius = Math.random() * 8 + 10;
-        this.vy = Math.random() * 6 + 4;
-        this.vx = Math.random() * 4 - 2;
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = Math.random() * 0.1 + 0.05;
-        this.bounceCount = 0;
-        this.color = '#eab308';
-        this.scaleY = 1;
-        this.scaleSpeed = Math.random() * 0.1 + 0.05;
-      }
-
-      update() {
-        this.vy += 0.25;
-        this.y += this.vy;
-        this.x += this.vx;
-        this.rotation += this.rotationSpeed;
-        this.scaleY = Math.abs(Math.sin(this.rotation));
-
-        if (this.y + this.radius > canvas.height) {
-          this.y = canvas.height - this.radius;
-          if (this.bounceCount < 2) {
-            this.vy = -this.vy * 0.5;
-            this.vx *= 0.8;
-            this.bounceCount++;
-            playCoinSound();
-          } else {
-            this.vy = 0;
-            this.vx = 0;
-          }
-        }
-      }
-
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.scale(1, this.scaleY);
-
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#ca8a04';
-        ctx.fill();
-        ctx.lineWidth = 1.5;
-        ctx.strokeStyle = '#fef08a';
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius * 0.6, 0, Math.PI * 2);
-        ctx.strokeStyle = '#ca8a04';
-        ctx.stroke();
-
-        ctx.fillStyle = '#fef08a';
-        ctx.font = 'bold 10px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('$', 0, 0);
-
-        ctx.restore();
-      }
+    function resetViewToCenter() {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      scale = Math.min(w, h) / GRID_SIZE * 0.95;
+      offsetX = (w - GRID_SIZE * scale) / 2;
+      offsetY = (h - GRID_SIZE * scale) / 2;
+      draw();
     }
 
-    function generateCoins(count, x, y) {
-      for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-          coins.push(new GoldCoin(x, y));
-        }, i * 40);
-      }
-    }
-
-    function animateCoins() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      coins = coins.filter(coin => coin.y < canvas.height || coin.bounceCount < 2);
-      coins.forEach(coin => {
-        coin.update();
-        coin.draw();
-      });
-      requestAnimationFrame(animateCoins);
-    }
-    animateCoins();
-
-    // ==================== 數據與狀態中心 ====================
-    let members = ['Chris', 'Steve', 'Orinda', 'Jamilee'];
-    let expenses = []; // 零假資料起始
-
-    let foodItems = [
-      { id: 'fiveguys', name: 'Five Guys (五幫大兵)', desc: '經典花生隨便拿，漢堡配料隨心選，手切薯條超級飽！', checked: false },
-      { id: 'shakeshack', name: 'Shake Shack', desc: '源自紐約的網紅經典漢堡，波浪形脆薯與香醇奶昔必點！', checked: false },
-      { id: 'innout', name: 'In-N-Out Burger', desc: '美西大當家！熟客才懂的隱藏版「Animal Style」神級搭配！', checked: false },
-      { id: 'bluebottle', name: 'Blue Bottle Coffee', desc: '極簡藍瓶咖啡，在北加州午後享受一杯細緻現磨手沖。', checked: false },
-      { id: 'pizzeriabianco', name: 'Pizzeria Bianco', desc: '窯烤炭香手工披薩，微焦邊緣與香濃起司的完美結合！', checked: false },
-      { id: 'boudin', name: 'Boudin Bakery 酸麵包巧達湯', desc: '漁人碼頭名產，酸香微酥的巨型酸麵包裝著滾燙海鮮濃湯！', checked: false },
-      { id: 'hellskitchen', name: 'Gordon Ramsay 地獄廚房', desc: '拉斯維加斯 Strip 大道頂級朝聖！地獄招牌威靈頓牛排！', checked: false },
-      { id: 'roadbbq', name: '美式公路煙燻烤肉 BBQ', desc: '美西公路小鎮必吃！超厚手撕豬肉與手切牛胸肉。', checked: false }
-    ];
-
-// ==================== 1. 請替換原有的 prepItems 數據陣列 ====================
-// ==================== 1. 請替換原有的 prepItems 數據陣列 ====================
-// 已擴充「禁止攜帶之危險禁忌品」以及「隨身液體限制規範」
-let prepItems = [
-  // 隨身小包
-  { id: 'passport', category: 'bag', text: '護照正本 (隨身小包：確認效期需在 6 個月以上)', checked: false },
-  { id: 'license_double', category: 'bag', text: '自駕雙證：台灣駕照 + 國際駕照 (隨身小包：自駕必備)', checked: false },
-  { id: 'credit_card', category: 'bag', text: '高海外刷卡回饋信用卡 (隨身小包：建議帶 2~3 張備用)', checked: false },
-  { id: 'usd_cash', category: 'bag', text: '美金現鈔 (少量) (隨身小包：給小費或與旅伴分攤現鈔用)', checked: false },
-  { id: 'phone_battery', category: 'bag', text: '手機 + 行動電源 (隨身小包：行動電源不可託運，必須隨身)', checked: false },
-  { id: 'pen', category: 'bag', text: '原子筆 (隨身小包：過海關或填寫飛機申報單必備)', checked: false },
-
-  // 登機/手提箱
-  { id: 'esta_paper', category: 'carry', text: 'ESTA 授權許可紙本憑證 (登機/手提箱：防網路失聯備查)', checked: false },
-  { id: 'flight_hotel_voucher', category: 'carry', text: '機票 & 住宿確認憑證 (登機/手提箱：出示給海關看)', checked: false },
-  { id: 'universal_ticket', category: 'carry', text: '環球影城確認憑證 (登機/手提箱：電子或紙本存好)', checked: false },
-  { id: 'alcatraz_ticket', category: 'carry', text: '惡魔島船票確認憑證 (登機/手提箱：監獄探秘預約)', checked: false },
-  { id: 'antelope_ticket', category: 'carry', text: '羚羊谷導覽確認憑證 (登機/手提箱：熱門印地安導覽)', checked: false },
-  { id: 'liquids_100ml', category: 'carry', text: '100ml內液體透明密封袋 (登機/手提箱：TSA安檢隨身液體限制)', checked: false },
-  { id: 'electronics_charger', category: 'carry', text: '相機/平板/電腦及充電線 (登機/手提箱：貴重電器隨身帶)', checked: false },
-  { id: 'personal_med', category: 'carry', text: '個人急需藥品 & 隱形眼鏡 (登機/手提箱：高空飛行急用防乾)', checked: false },
-
-  // 大託運箱
-  { id: 'clothes_jacket', category: 'checked', text: '換洗衣物 & 保暖防風外套 (大託運箱：舊金山/大峽谷溫差極大)', checked: false },
-  { id: 'toothbrush_towel', category: 'checked', text: '牙刷、牙膏、毛巾 (大託運箱：美國多數 Airbnb 不一定提供)', checked: false },
-  { id: 'slippers', category: 'checked', text: '室內 / 戶外拖鞋 (大託運箱：美式飯店多不提供一次性拖鞋)', checked: false },
-  { id: 'sun_screen', category: 'checked', text: '防曬乳 & 太陽眼鏡 (大託運箱：大峽谷、約書亞樹沙漠曝曬高溫)', checked: false },
-  { id: 'med_kit', category: 'checked', text: '感冒藥、腸胃藥、暈車藥 (大託運箱：常備外傷與急救藥物)', checked: false },
-  { id: 'umbrella_raincoat', category: 'checked', text: '摺疊雨傘 / 雨衣 (大託運箱：防範氣候突然轉變)', checked: false },
-  { id: 'tw_ramen', category: 'checked', text: '台灣泡麵 & 零食乾糧 (大託運箱：美西荒野宵夜與思鄉救星！)', checked: false },
-
-  // 絕對不可攜帶之危險禁忌品（TSA 嚴格禁止）
-  { id: 'no_meat_fresh', category: 'forbidden', text: '肉製品、生鮮蔬果、植物種子 (絕對禁止：含肉鬆、肉乾、生肉、水果、泥土)', checked: false },
-  { id: 'no_match_lighters', category: 'forbidden', text: '防風/藍焰打火機、防狼噴霧 (絕對禁止：海關安檢直接沒收與重罰)', checked: false },
-  { id: 'no_loose_lithium', category: 'forbidden', text: '託運未拆包裝/散裝鋰電池 (絕對禁止：凡鋰電池、行動電源一律不可放入大託運箱)', checked: false },
-  { id: 'no_cbd_marijuana', category: 'forbidden', text: '含大麻/CBD成分之任何製品 (絕對禁止：美國聯邦法與海關入境處仍屬違法禁藥)', checked: false }
-];
-
-
-    // 14天詳細日程
-    const itinerary = [
-      { day: 1, date: '05/23 (六)', title: '啟航 ✈️ 台北 － 洛杉磯', state: '加州 California', location: '台北桃園 (TPE) ➔ 洛杉磯 (LAX)', desc: '懷著興奮無比的心情集合於桃園機場，衝上高空、跨越萬里換日線！降落後辦理入境租車，開啟自駕美西荒野夢幻之旅！', highlights: ['穿梭太平洋時光換日線', '取越野車展開美西首航', '入住溫馨 LA 營地調整時差'], tips: '飛機上多喝水並盡量配合美西時間睡眠，以減緩落地時差。', color: 'bg-[#8d5b4c]' },
-      { day: 2, date: '05/24 (日)', title: '天使之城補給日 🛍️', state: '加州 California', location: '洛杉磯市區與大超市', desc: '今天放慢腳步，駕車造訪著名的 Hollywood 地標與市區，並前往 Target 採買未來幾天自駕所需的飲用水、零食、水。晚餐大口吞下傳說中的 In-N-Out！', highlights: ['美式大超市採購補給', '好萊塢星光大道漫遊', '初嚐美西霸主 In-N-Out 漢堡'], tips: '美西公路慢長乾燥，車尾箱務必囤放一兩箱礦泉水。', color: 'bg-[#8d5b4c]' },
-      { day: 3, date: '05/25 (一)', title: '約書亞樹國家公園 🌵 Chris 生日快樂！🎂', state: '加州 California', location: '洛杉磯 ➔ 約書亞樹國家公園 (Joshua Tree)', desc: '驅車前往約書亞樹國家公園，觀賞矗立在奇岩怪石中的約書亞樹。夜間入住超有荒野野奢風格的 Airbnb，大家一同下廚大展身手，替 Chris 慶生！', birthday: '🎂 Chris 生日大驚喜！', highlights: ['約書亞樹奇景與絕美黃昏', '在沙漠豪華別墅親自下廚', '荒原寂靜無光污染觀星'], tips: '沙漠地帶日照極強且乾燥，防曬乳、遮陽帽 and 保濕極度重要。', color: 'bg-[#b45309]' },
-      { day: 4, date: '05/26 (二)', title: '不夜金沙城 🎲 拉斯維加斯', state: '內華達 Nevada', location: '約書亞樹 ➔ 拉斯維加斯 (Las Vegas)', desc: '睡到自然醒，隨後駕車穿越莫哈維沙漠公路，前進極度奢華的沙漠霓虹世界。抵達賭城後在 Strip 大道漫遊，享受視覺感官的極大震撼！', highlights: ['穿越廣袤的荒漠公路自駕', '賭城不夜城奢華飯店巡禮', '百樂宮大型水舞音樂噴泉'], tips: '賭城內部酒店冷氣非常強大，記得攜帶薄外套，免於冷熱交替感冒。', color: 'bg-[#b91c1c]' },
-      { day: 5, date: '05/27 (三)', title: '地獄廚房饗宴 🍴 賭城彈性探索', state: '內華達 Nevada', location: '拉斯維加斯市區', desc: '早上完全彈性休息。下午 15:00 準時進入 Gordon Ramsay 的 Hell\'s Kitchen，品嚐傳奇的威靈頓牛排！晚上大家可自費欣賞精彩絕倫的太陽馬戲團大秀。', highlights: ['朝聖地獄廚房奢華午晚餐', '賭城暢貨中心 Outlet 大瘋購', '極致炫目豪奢賭城夜景'], tips: '地獄廚房服裝雖無嚴苛規定，但建議 Smart Casual，拍照更有儀式感！', color: 'bg-[#b91c1c]' },
-      { day: 6, date: '05/28 (四)', title: '磅礴世界奇景 🌲 Steve 生日快樂！🎂', state: '亞利桑那 Arizona', location: '拉斯維加斯 ➔ 大峽谷 ➔ 佩吉市', desc: '清晨出發前往大峽谷國家公園南口，踏上世界七大奇景的邊緣！遊覽 Mather Point 與 Desert View 古塔，並於傍晚時分驅車至佩吉市營地，一同替 Steve 熱烈慶生！', birthday: '🎂 Steve 生日大狂歡！', highlights: ['萬丈深淵大峽谷震撼眺望', 'Desert View 古塔金黃日落', '佩吉市星空 Airbnb 生日大趴'], tips: '大峽谷海拔約 2200 公尺，起風或夕陽西下後極其寒冷，務必穿足保暖衣物！', color: 'bg-[#a16207]' },
-      { day: 7, date: '05/29 (五)', title: '大自然光雕魔法 ✨ 羚羊谷與馬蹄灣', state: '亞利桑那 Arizona', location: '佩吉市 (Antelope & Horseshoe)', desc: '今天睡飽出發！中午參與羚羊谷印地安導覽，捕捉上帝撒在波浪岩壁上的天使光芒。傍晚在馬蹄灣懸崖邊緣，眺望科羅拉多河 360 度大拐彎夕陽。', highlights: ['羚羊谷不可思議的波浪光影', '馬蹄灣 300 米深淵壯麗日落', '美式公路小鎮牛排館聚餐'], tips: '羚羊谷內嚴禁攜帶自拍棒及背包，僅能帶相機、手機與水，請務必配合。', color: 'bg-[#a16207]' },
-      { day: 8, date: '05/30 (六)', title: '再見荒野 ✈️ 飛向舊金山海灣', state: '加州 California', location: '佩吉市 ➔ 拉斯維加斯機場還車 ➔ 舊金山 (SFO)', desc: '一早駛離佩吉，返回拉斯維加斯機場還車。搭乘國內線飛抵優雅的海灣城市舊金山！重新租車後開過長長的跨海大橋，入住奧克蘭藝術氛圍旅宿。', highlights: ['再看一眼驚艷的內華達荒漠', '搭國內航班鳥瞰美西山脈', '跨越海灣入住東灣藝術別墅'], tips: '美國國內線班機托運行李通常需當場收費，請事先將行李重量進行優化。', color: 'bg-[#155e75]' },
-      { day: 9, date: '05/31 (日)', title: '碼頭慵懶海獅 🌊 惡魔島監獄之夜', state: '加州 California', location: '漁人碼頭 & 惡魔島 & 金門大橋', desc: '上午在 Pier 39 碼頭看成群的海獅，午餐享用 Boudin Bakery 熱騰騰的酸麵包巧達湯。下午搭船踏上神祕的惡魔島監獄探秘。黃昏至金門大橋合影！', highlights: ['39號碼頭肥胖海獅曬太陽', '惡魔島(Alcatraz)聯盤監獄探秘', '金門大橋最經典的黃昏角度'], tips: '舊金山港口海風猛烈，氣溫宛如冬季，請務必攜帶防風禦寒厚外套。', color: 'bg-[#155e75]' },
-      { day: 10, date: '06/01 (一)', title: '傾斜斜坡九曲花街 🚃 復古叮叮車之旅', state: '加州 California', location: '舊金山市區', desc: '挑戰舊金山世界著名的極限大斜坡！徒步走下花團錦簇的九曲花街，隨後掛在叮叮車外側穿梭市區。下午在聯合廣場盡情購物，隨後在文青聖地藍瓶咖啡小憩。', highlights: ['九曲花街 Lombard 的考驗', '像拍電影般掛在車旁搭叮叮車', '藍瓶咖啡創始地細細品嚐風味'], tips: '叮叮車排隊人潮極多，建議提早於手機 App 購買乘車券。', color: 'bg-[#3730a3]' },
-      { day: 11, date: '06/02 (二)', title: '文創藝術奧克蘭 🎓 柏克萊名校洗禮', state: '加州 California', location: '奧克蘭 ➔ 柏克萊大學 (UC Berkeley)', desc: '上午探訪奧克蘭港區藝術市集，中午前往世界頂尖學府柏克萊大學校園，參觀壯麗的薩瑟塔，沉浸在濃濃的學院與學術氛圍中。', highlights: ['東灣奧克蘭港文創海邊漫步', '柏克萊大學名校薩瑟塔鐘樓', '品嚐在地美式早午餐排隊名店'], tips: '校園極度寬廣，建議穿著最舒適好走的運動鞋前來。', color: 'bg-[#3730a3]' },
-      { day: 12, date: '06/03 (三)', title: '瘋狂大採購伴手禮 💔 踏上歸途', state: '歸途航線', location: '舊金山市區 ➔ SFO機場 ➔ 台北', desc: '最後一整天，大家實地採買伴手禮。晚上 22:00 前抵達 SFO 機場辦理退稅與 Check-In，告別這趟奇幻冒險。', highlights: ['美式巧克力與特色周邊瘋狂採買', '舊金山機場免稅店最後補貨', '14天公路夥伴依依不捨互道珍重'], tips: '國際航線安檢與行李托運較嚴，請務必提前 3 小時抵達機場。', color: 'bg-[#475569]' },
-      { day: 13, date: '06/04 (四)', title: '跨越萬里雲端 ✈️ 時空穿梭中', state: '雲端飛行', location: '太平洋萬米高空', desc: '凌晨 00:50 飛機準時滑行升空！在機艙內放鬆享受熱食與精彩影音，再次飛越萬里太平洋與國際換日線，將滿箱的紀念品與滿懷的回憶一併打包！', highlights: ['長途飛機影音不間斷連看', '與同伴交換互傳 14天拍照大圖', '在雲端調整作息準備降落'], tips: '長途客艙極為乾燥，請隨身攜帶保濕乳液與眼藥水。', color: 'bg-[#475569]' },
-      { day: 14, date: '06/05 (五)', title: '平安降落桃園 🏡 完美的終點', state: '台灣 Taipei', location: '桃園國際機場 (TPE)', desc: '清晨 05:25 順利降落台北桃園機場！完美的跨州自駕公路旅程正式畫下最震撼、最開心的句點。大夥兒相約下一次的大冒險！', highlights: ['05:25 抵達溫馨的家', '向家人分享大峽谷與羚羊谷奇景', '約好下個週末吃熱炒店分帳聚會！'], tips: '平安回家後洗個熱水澡，好好睡個覺，開啟照片分享囉！', color: 'bg-[#065f46]' }
-    ];
-
-    // ==================== 1. GAS 雲端儲存相關控制函數 ====================
-    function openGasSetupModal() {
-      const modal = document.getElementById('gasSetupModal');
-      if (modal) {
-        modal.classList.remove('hidden');
-      }
-    }
-
-    // 關閉 GAS 同步面板的函數
-    function closeGasSetupModal() {
-      const modal = document.getElementById('gasSetupModal');
-      if (modal) {
-        modal.classList.add('hidden');
-      }
-    }
-
-    // 複製 GAS 代碼的函數
-    function copyGasCode() {
-      const code = document.getElementById('gasCodeBlock').textContent;
-      const textarea = document.createElement('textarea');
-      textarea.value = code;
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        alert("🧙‍♂️ 魔法代碼已複製到您的剪貼簿！請直接貼到 Google Apps Script 編輯器中。");
-      } catch (err) {
-        alert("複製失敗，請手動框選複製！");
-      }
-      document.body.removeChild(textarea);
-    }
-
-    // ==================== 2. 導覽列與分頁切換控制函數 ====================
-    function switchTab(tabId) {
-      document.querySelectorAll('section').forEach(function(sec) {
-        sec.classList.add('hidden');
-      });
-      const targetSec = document.getElementById('content-' + tabId);
-      if (targetSec) {
-        targetSec.classList.remove('hidden');
-      }
-
-      document.querySelectorAll('nav button').forEach(function(btn) {
-        btn.className = "flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#2a1a15] text-[#e6ccb2] border-[#8b5e3c]/50 hover:bg-[#3e2723]";
-      });
-      const activeBtn = document.getElementById('tab-' + tabId);
-      if (activeBtn) {
-        activeBtn.className = "flex flex-col items-center px-5 py-2.5 rounded-xl border-2 font-black text-xs transition-all whitespace-nowrap min-w-[120px] bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md transform -translate-y-0.5";
-      }
-
-      if (tabId === 'map') {
-        playCarHorn();
-      }
-    }
-
-    // ==================== 成員與分平攤計算管理 ====================
-    function renderMembers() {
-      const listEl = document.getElementById('membersList');
-      const payerSelect = document.getElementById('expPayer');
-      if (!listEl || !payerSelect) return;
-      listEl.innerHTML = '';
-      payerSelect.innerHTML = '';
-
-      members.forEach(m => {
-        const isBday = (m === 'Chris' || m === 'Steve') ? ' 🎂' : '';
-        const div = document.createElement('div');
-        div.className = "flex items-center justify-between p-2.5 bg-[#fcf5ec] border border-[#8b5e3c]/30 rounded-lg text-xs font-black shadow-sm transition-all";
-        div.innerHTML = '<span>👤 ' + m + isBday + '</span>' +
-          '<button onclick="removeMember(\'' + m + '\')" class="text-rose-700 hover:text-rose-900 transition-colors p-1" title="踢出探險隊">' +
-            '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
-          '</button>';
-        listEl.appendChild(div);
-
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m + isBday;
-        payerSelect.appendChild(opt);
-      });
-
-      const warning = document.getElementById('memberWarning');
-      if (warning) {
-        if (members.length <= 1) {
-          warning.classList.remove('hidden');
-        } else {
-          warning.classList.add('hidden');
-        }
-      }
-
-      lucide.createIcons();
-    }
-
-    function addMember(e) {
+    // --- 8. 拖曳與縮放互動機制 ---
+    container.addEventListener('wheel', (e) => {
       e.preventDefault();
-      const input = document.getElementById('newMemberInput');
-      const name = input.value.trim();
-      if (!name) return;
-      if (members.includes(name)) {
-        alert("此隊員已在名冊中！");
-        return;
+      const rect = mainCanvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      const newScale = Math.min(Math.max(scale * zoomFactor, 0.25), 60);
+
+      offsetX = mouseX - ((mouseX - offsetX) / scale) * newScale;
+      offsetY = mouseY - ((mouseY - offsetY) / scale) * newScale;
+      scale = newScale;
+
+      draw();
+    }, { passive: false });
+
+    // 空白鍵快切拖移
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && !isSpacePressed) {
+        isSpacePressed = true;
+        setMode(false);
       }
-      members.push(name);
-      input.value = '';
-      renderMembers();
-      recalculateAll();
-      playCoinSound();
-      triggerAutoSave();
-    }
-
-    function removeMember(name) {
-      if (members.length <= 1) return;
-      members = members.filter(m => m !== name);
-      renderMembers();
-      recalculateAll();
-      triggerAutoSave();
-    }
-
-    // ==================== 帳目管理與最小清算演算法 ====================
-    function renderExpenses() {
-      const listEl = document.getElementById('expensesHistoryList');
-      if (!listEl) return;
-      listEl.innerHTML = '';
-
-      expenses.forEach(exp => {
-        const div = document.createElement('div');
-        div.className = "group flex items-center justify-between p-4 bg-[#fdfaf3] hover:bg-[#f3e9dc] border border-[#8b5e3c]/20 rounded-xl transition-all hover:shadow-md";
-        div.innerHTML = '<div class="space-y-1">' +
-            '<div class="flex items-center gap-2 flex-wrap">' +
-              '<span class="font-extrabold text-[#3e2723] text-sm">' + exp.title + '</span>' +
-              '<span class="bg-[#8b5e3c]/10 text-[#8b5e3c] text-[10px] font-black px-1.5 py-0.5 rounded border border-[#8b5e3c]/20">' + exp.category + '</span>' +
-            '</div>' +
-            '<div class="text-[10px] text-stone-500 font-bold flex items-center gap-3">' +
-              '<span>📅 日期：' + exp.date + '</span>' +
-              '<span>👤 墊款人：<strong>' + exp.payer + '</strong></span>' +
-            '</div>' +
-          '</div>' +
-          '<div class="flex items-center gap-4">' +
-            '<span class="font-black text-base text-[#5d4037]">$' + exp.amount.toFixed(2) + '</span>' +
-            '<button onclick="deleteExpense(' + exp.id + ')" class="text-stone-400 hover:text-rose-700 transition-colors p-1" title="刪除此帳目">' +
-              '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
-            '</button>' +
-          '</div>';
-        listEl.appendChild(div);
-      });
-
-      const countEl = document.getElementById('expenseCount');
-      if (countEl) countEl.textContent = expenses.length + " 筆";
-      lucide.createIcons();
-    }
-
-    function addExpense(e) {
-      e.preventDefault();
-      const title = document.getElementById('expTitle').value.trim();
-      const amount = parseFloat(document.getElementById('expAmount').value);
-      const category = document.getElementById('expCategory').value;
-      const payer = document.getElementById('expPayer').value;
-
-      if (!title || isNaN(amount) || amount <= 0) return;
-
-      generateCoins(15);
-      
-      const overlay = document.getElementById('stampOverlay');
-      if (overlay) {
-        overlay.classList.remove('hidden');
-        overlay.classList.add('stamp-active');
-      }
-      playStampSound();
-
-      setTimeout(() => {
-        if (overlay) {
-          overlay.classList.remove('stamp-active');
-          overlay.classList.add('hidden');
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') {
+        isSpacePressed = false;
+        if (document.getElementById('btnDrawMode').classList.contains('bg-cyan-600')) {
+          setMode(true);
         }
-      }, 950);
-
-      const dayOffset = Math.floor(Math.random() * 12) + 23;
-      const newExp = {
-        id: Date.now(),
-        title,
-        amount,
-        payer,
-        category,
-        date: "05/" + dayOffset
-      };
-
-      expenses.unshift(newExp);
-      
-      document.getElementById('expTitle').value = '';
-      document.getElementById('expAmount').value = '';
-
-      recalculateAll();
-      triggerAutoSave();
-    }
-
-    function deleteExpense(id) {
-      expenses = expenses.filter(exp => exp.id !== id);
-      recalculateAll();
-      triggerAutoSave();
-    }
-
-    function recalculateAll() {
-      renderExpenses();
-
-      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-      const perPerson = members.length > 0 ? total / members.length : 0;
-
-      const totalEl = document.getElementById('totalExpensesDisplay');
-      const avgEl = document.getElementById('avgExpensesDisplay');
-      const avgLabelEl = document.getElementById('averageLabel');
-      
-      if (totalEl) totalEl.textContent = "$" + total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      if (avgEl) avgEl.textContent = "$" + perPerson.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      if (avgLabelEl) avgLabelEl.textContent = "⚖️ 每人應平攤 (" + members.length + " 人)";
-
-      const paidMap = {};
-      members.forEach(m => paidMap[m] = 0);
-      expenses.forEach(e => {
-        if (members.includes(e.payer)) {
-          paidMap[e.payer] += e.amount;
-        }
-      });
-
-      const balSheet = document.getElementById('balanceSheet');
-      if (!balSheet) return;
-      balSheet.innerHTML = '';
-
-      const balances = members.map(m => {
-        const paid = paidMap[m] || 0;
-        const net = paid - perPerson;
-        return { name: m, paid, net };
-      });
-
-      balances.forEach(b => {
-        const div = document.createElement('div');
-        div.className = "flex justify-between items-center py-1";
-        
-        let tag = '';
-        if (b.net >= 0.01) {
-          tag = '<span class="text-emerald-800 bg-emerald-100 font-black px-2 py-0.5 rounded text-[10px]">收 $' + b.net.toFixed(1) + '</span>';
-        } else if (b.net <= -0.01) {
-          tag = '<span class="text-rose-800 bg-rose-100 font-black px-2 py-0.5 rounded text-[10px]">付 $' + Math.abs(b.net).toFixed(1) + '</span>';
-        } else {
-          tag = '<span class="text-stone-500 bg-stone-100 font-black px-2 py-0.5 rounded text-[10px]">已平</span>';
-        }
-
-        div.innerHTML = '<div class="font-extrabold text-[#3e2723]">' + b.name + '</div>' +
-          '<div class="flex items-center gap-2">' +
-            '<span class="text-[10px] text-stone-500 font-bold">已付 $' + b.paid.toFixed(1) + '</span>' +
-            tag +
-          '</div>';
-        balSheet.appendChild(div);
-      });
-
-      calculateOptimizedDebts(balances);
-    }
-
-    let optimizedDebtsToShare = [];
-
-    function calculateOptimizedDebts(balances) {
-      let debtors = balances.filter(b => b.net < -0.01).sort((a, b) => a.net - b.net);
-      let creditors = balances.filter(b => b.net > 0.01).sort((a, b) => b.net - a.net);
-
-      const container = document.getElementById('optimizedDebtsList');
-      if (!container) return;
-      container.innerHTML = '';
-      optimizedDebtsToShare = [];
-
-      let i = 0;
-      let j = 0;
-
-      while (i < debtors.length && j < creditors.length) {
-        let debtor = debtors[i];
-        let creditor = creditors[j];
-
-        let payAmount = Math.min(Math.abs(debtor.net), creditor.net);
-
-        if (payAmount > 0.01) {
-          optimizedDebtsToShare.push({
-            from: debtor.name,
-            to: creditor.name,
-            amount: payAmount
-          });
-        }
-
-        debtor.net += payAmount;
-        creditor.net -= payAmount;
-
-        if (Math.abs(debtor.net) < 0.01) i++;
-        if (Math.abs(creditor.net) < 0.01) j++;
       }
-
-      if (optimizedDebtsToShare.length === 0) {
-        container.innerHTML = '<div class="text-center py-8 bg-emerald-50/50 rounded-xl border border-emerald-200 text-xs">' +
-            '<span class="text-2xl block mb-1">🎉</span>' +
-            '<p class="font-black text-emerald-950">大家出資完美平衡！</p>' +
-            '<p class="text-[10px] text-emerald-800 mt-0.5">無人需要額外轉帳付款，分贓大圓滿！</p>' +
-          '</div>';
-        return;
-      }
-
-      optimizedDebtsToShare.forEach((debt, index) => {
-        const div = document.createElement('div');
-        div.className = "bg-white/80 border border-amber-800/20 p-3 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-all";
-        div.innerHTML = '<div class="flex items-center gap-2 text-xs font-bold text-stone-800">' +
-            '<span class="w-5 h-5 bg-amber-800 text-amber-50 rounded-full flex items-center justify-center text-[10px] font-black">' + (index+1) + '</span>' +
-            '<div>' +
-              '<span class="text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">' + debt.from + '</span>' +
-              '<span class="mx-1 text-stone-400">➔ 支付金幣給 ➔</span>' +
-              '<span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">' + debt.to + '</span>' +
-            '</div>' +
-          '</div>' +
-          '<span class="font-black text-xs text-[#3e2723]">$' + debt.amount.toFixed(2) + '</span>';
-        container.appendChild(div);
-      });
-    }
-
-    function copyDebtsToClipboard() {
-      let total = expenses.reduce((sum, e) => sum + e.amount, 0);
-      let perPerson = members.length > 0 ? total / members.length : 0;
-
-      let text = `📜 ─── 美西 4 州 ‧ 冒險旅費分贓帳卷 ─── 📜\n\n`;
-      text += `💰 旅途累計黃金：$${total.toFixed(2)} USD\n`;
-      text += `👥 冒險隊員 (${members.length} 人)：${members.join(', ')}\n`;
-      text += `⚖️ 每人應平攤：$${perPerson.toFixed(2)} USD\n\n`;
-      text += `📍 最省事債務清算對照指南：\n`;
-
-      if (optimizedDebtsToShare.length === 0) {
-        text += `   🎉 大夥帳目完美平整！無人需要額外付款！`;
-      } else {
-        optimizedDebtsToShare.forEach((debt, idx) => {
-          text += `   【${idx+1}】 ${debt.from} ➔ 支付 $${debt.amount.toFixed(2)} USD ➔ 給 ${debt.to}\n`;
-        });
-      }
-
-      text += `\n✨ 分贓明細一目了然！大夥兒轉好金幣後，我們下一場冒險再會！🗺️🚗`;
-
-      const textarea = document.createElement('textarea');
-      textarea.value = text;
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        alert("📜 討債金紙手卷已抄寫至您的剪貼簿！快貼去 LINE 群組大聲討債吧！");
-      } catch (err) {
-        alert("複製失敗，請手動抄寫！");
-      }
-      document.body.removeChild(textarea);
-    }
-
-    function exportData() {
-      const payload = {
-        expenses,
-        members,
-        foodItems,
-        prepItems
-      };
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", "美西大自駕_冒險黃金帳卷.json");
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
-    }
-
-    function importData(e) {
-      const reader = new FileReader();
-      if (e.target.files && e.target.files[0]) {
-        reader.readAsText(e.target.files[0], "UTF-8");
-        reader.onload = (event) => {
-          try {
-            const parsed = JSON.parse(event.target.result);
-            if (parsed.expenses && parsed.members) {
-              expenses = parsed.expenses;
-              members = parsed.members;
-              if (parsed.foodItems) foodItems = parsed.foodItems;
-              if (parsed.prepItems) prepItems = parsed.prepItems;
-
-              generateCoins(30);
-              recalculateAll();
-              renderMembers();
-              renderFood();
-              renderPrep();
-              alert("📜 羊皮大卷軸導入大成功！歷史財富已完美同步！");
-            } else {
-              alert("格式不對，這是一張假的秘寶圖！");
-            }
-          } catch (err) {
-            alert("讀取失敗，羊皮紙受潮了！");
-          }
-        };
-      }
-    }
-
-    // ==================== 3. 14天行程 (Timeline) 模組 ====================
-    function renderDayGrid() {
-      const container = document.getElementById('dayGridSelector');
-      if (!container) return;
-      container.innerHTML = '';
-
-      itinerary.forEach((day, idx) => {
-        const btn = document.createElement('button');
-        btn.id = `day-btn-${idx}`;
-        btn.onclick = () => selectDay(idx);
-        
-        const bdayIcon = day.birthday ? `<span class="absolute -top-1 -right-1 bg-rose-700 text-white text-[8px] w-4 h-4 flex items-center justify-center rounded-full animate-bounce">🎂</span>` : '';
-        
-        btn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-white text-stone-700 border-[#8b5e3c]/20 hover:border-[#8b5e3c]";
-        btn.innerHTML = `
-          <span class="text-[9px] font-bold opacity-75">Day</span>
-          <span class="text-base font-black leading-tight">${day.day}</span>
-          <span class="text-[8px] opacity-70 font-sans mt-0.5">${day.date.split(' ')[0]}</span>
-          ${bdayIcon}
-        `;
-        container.appendChild(btn);
-      });
-    }
-
-    function selectDay(index) {
-      document.querySelectorAll('#dayGridSelector button').forEach(btn => {
-        btn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-white text-stone-700 border-[#8b5e3c]/20 hover:border-[#8b5e3c]";
-      });
-      const activeBtn = document.getElementById(`day-btn-${index}`);
-      if (activeBtn) {
-        activeBtn.className = "relative p-2 rounded-xl text-center transition-all border flex flex-col justify-center items-center bg-[#8b5e3c] text-amber-50 border-amber-400 shadow-md";
-      }
-
-      const day = itinerary[index];
-      const detailEl = document.getElementById('dayDetailCard');
-      if (!detailEl) return;
-      
-      const bdayBanner = day.birthday ? `
-        <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-center gap-3 animate-pulse">
-          <div class="bg-rose-700 text-white p-2.5 rounded-lg text-lg">🎁</div>
-          <div>
-            <h4 class="font-black text-rose-950 text-sm">${day.birthday}</h4>
-            <p class="text-xs text-rose-800">荒原之神賜福壽星！在極具風情的 Airbnb 大擺生日慶祝筵席！</p>
-          </div>
-        </div>
-      ` : '';
-
-      detailEl.innerHTML = `
-        <div class="parchment rounded-2xl burnt-edge overflow-hidden text-[#3e2723] animate-roll">
-          <div class="p-6 text-white ${day.color} relative border-b border-[#8b5e3c]/30">
-            <div class="absolute top-4 right-4 text-7xl font-black text-white/10 select-none pointer-events-none">DAY ${day.day}</div>
-            <div class="flex items-center gap-2">
-              <span class="bg-white/25 backdrop-blur-md text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">${day.state}</span>
-              <span class="text-xs font-bold opacity-90">${day.date}</span>
-            </div>
-            <h2 class="text-xl md:text-3xl font-black mt-3 drop-shadow-sm">${day.title}</h2>
-            <div class="flex items-center gap-1.5 text-xs mt-2 opacity-95">
-              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
-              <span>${day.location}</span>
-            </div>
-          </div>
-
-          <div class="p-6 md:p-8 space-y-6">
-            ${bdayBanner}
-
-            <div>
-              <h3 class="text-xs font-bold text-amber-900 uppercase tracking-widest mb-1">🗺️ 航海探索紀要</h3>
-              <p class="text-[#3e2723] font-bold leading-relaxed text-sm">${day.desc}</p>
-            </div>
-
-            <div>
-              <h3 class="text-xs font-bold text-amber-900 uppercase tracking-widest mb-3.5">⚔️ 今日攻略景點 (Highlights)</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                ${day.highlights.map(function(h) {
-                  return '<div class="bg-amber-50/50 border border-[#8b5e3c]/20 p-3 rounded-lg flex items-start gap-2">' +
-                         '<span class="text-emerald-700 font-extrabold">✓</span>' +
-                         '<span class="text-xs font-bold text-[#3e2723]">' + h + '</span>' +
-                         '</div>';
-                }).join('')}
-              </div>
-            </div>
-
-            <div class="bg-amber-50/70 border border-[#8b5e3c]/30 p-4 rounded-xl flex items-start gap-3">
-              <i data-lucide="alert-circle" class="w-5 h-5 text-[#8b5e3c] shrink-0 mt-0.5"></i>
-              <div>
-                <h4 class="font-black text-amber-950 text-xs">航海提示 (Tips)</h4>
-                <p class="text-xs text-[#5d4037] mt-1 leading-relaxed italic">${day.tips}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      lucide.createIcons();
-    }
-
-    // ==================== 5. 越野車行進地圖 (Map) 模組 ====================
-    function driveToPoint(x, y, timelineDayIndex) {
-      playCarHorn();
-      
-      const car = document.getElementById('mapCarGroup');
-      if (car) {
-        car.setAttribute('transform', `translate(${x}, ${y}) scale(1.5)`);
-      }
-
-      setTimeout(() => {
-        switchTab('timeline');
-        selectDay(timelineDayIndex);
-        generateCoins(8, window.innerWidth / 2, 200);
-      }, 1100);
-    }
-
-    // ==================== 6. 補給美食打卡 (Food) 模組 ====================
-    function renderFood() {
-      const container = document.getElementById('foodGrid');
-      if (!container) return;
-      container.innerHTML = '';
-
-      foodItems.forEach(item => {
-        const div = document.createElement('div');
-        div.onclick = function() { toggleFood(item.id); };
-        
-        const activeClass = item.checked ? 'bg-emerald-50 border-emerald-300 shadow-sm' : 'bg-white border-[#8b5e3c]/30 hover:border-[#8b5e3c]';
-        const checkboxClass = item.checked ? 'bg-emerald-700 border-emerald-700 text-white' : 'border-stone-300 bg-[#fbfbf9]';
-
-        div.className = "p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 " + activeClass;
-        div.innerHTML = 
-          '<div class="mt-1 shrink-0 w-5 h-5 rounded flex items-center justify-center border transition-colors ' + checkboxClass + '">' +
-            (item.checked ? '<span class="text-[10px] font-black">✓</span>' : '') +
-          '</div>' +
-          '<div>' +
-            '<h3 class="font-black text-sm ' + (item.checked ? 'text-emerald-950 line-through opacity-70' : 'text-slate-800') + '">' + item.name + '</h3>' +
-            '<p class="text-[10px] text-stone-500 mt-1 leading-relaxed">' + item.desc + '</p>' +
-          '</div>';
-        container.appendChild(div);
-      });
-
-      const checkedCount = foodItems.filter(f => f.checked).length;
-      const progressBadge = document.getElementById('foodProgressBadge');
-      if (progressBadge) progressBadge.textContent = "解鎖進度: " + checkedCount + " / " + foodItems.length;
-    }
-
-    function toggleFood(id) {
-      foodItems = foodItems.map(f => {
-        if (f.id === id) {
-          const updated = !f.checked;
-          if (updated) {
-            playCoinSound();
-            generateCoins(4);
-          }
-          return { ...f, checked: updated };
-        }
-        return f;
-      });
-      renderFood();
-      triggerAutoSave();
-    }
-
-    // ==================== 2. 請替換原有的 renderPrep() 函數 ====================
-// ==================== 2. 請替換原有的 renderPrep() 函數 ====================
-function renderPrep() {
-  const container = document.getElementById('prepItemsGrid');
-  if (!container) return;
-  container.innerHTML = '';
-
-  // 更新為與手冊完美吻合的 3 大行李分類 + 1 個紅牌警示禁品區
-  const categories = {
-    bag: '👜 隨身小包 (Personal Item)',
-    carry: '🎒 登機 / 手提箱 (Carry-on)',
-    checked: '🧳 大託運箱 (Checked Luggage)',
-    forbidden: '🚨 絕對不可攜帶之禁忌品 (Forbidden Items)'
-  };
-
-  // 額外置頂顯示隨身行李液體（TSA 3-1-1）一體規定的「羊皮紙公告」
-  const noticeDiv = document.createElement('div');
-  noticeDiv.className = "mb-6 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-xs space-y-2 text-amber-950 font-sans shadow-inner";
-  noticeDiv.innerHTML = 
-    '<h5 class="font-black text-amber-900 flex items-center gap-1.5 text-sm">' +
-      '<i data-lucide="shield-alert" class="w-4 h-4"></i> 隨身液體 TSA 3-1-1 一體嚴格規定' +
-    '</h5>' +
-    '<div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1 italic font-bold text-amber-900/90 leading-relaxed">' +
-      '<div>' +
-        '<span class="block text-amber-950 font-black">1. 瓶罐限制 (3oz / 100ml)</span>' +
-        '所有隨身攜帶之液體、膠狀或噴霧類物品，單一容器容積不得超過 <strong>100 毫升 (ml)</strong>。' +
-      '</div>' +
-      '<div>' +
-        '<span class="block text-amber-950 font-black">2. 透明密封拉鍊袋 (1 Quart)</span>' +
-        '所有液體瓶罐必須「全數」裝入一個容量不超過 <strong>1 公升 (20x20cm)</strong> 且可重複密封的透明塑膠袋中。' +
-      '</div>' +
-      '<div>' +
-        '<span class="block text-amber-950 font-black">3. 每人限帶一袋 (1 Bag)</span>' +
-        '每位旅客僅限攜帶「一個」透明裝袋，於安檢時必須單獨從手提箱取出來放置於托盤中受檢。' +
-      '</div>' +
-    '</div>';
-  container.appendChild(noticeDiv);
-
-  Object.keys(categories).forEach(cat => {
-    const catItems = prepItems.filter(p => p.category === cat);
-    
-    const section = document.createElement('div');
-    section.className = "space-y-2 mb-4";
-    
-    // 如果是絕對禁止攜帶物品，給予紅色醒目標題
-    const titleColor = cat === 'forbidden' ? 'text-rose-700' : 'text-[#8b5e3c]';
-    section.innerHTML = '<h4 class="text-xs font-black tracking-wider uppercase mb-1.5 ' + titleColor + '">' + categories[cat] + '</h4>';
-    
-    const grid = document.createElement('div');
-    grid.className = "grid grid-cols-1 md:grid-cols-2 gap-3";
-
-    catItems.forEach(item => {
-      const itemDiv = document.createElement('div');
-      itemDiv.onclick = function() { togglePrep(item.id); };
-      
-      // 禁止攜帶物品打勾後顯示紅色警戒色，其餘使用原本的翠綠色
-      let activeClass = '';
-      let checkClass = '';
-      
-      if (item.checked) {
-        if (cat === 'forbidden') {
-          activeClass = 'bg-rose-50 border-rose-300';
-          checkClass = 'bg-rose-700 border-rose-700 text-white';
-        } else {
-          activeClass = 'bg-emerald-50 border-emerald-300';
-          checkClass = 'bg-emerald-700 border-emerald-700 text-white';
-        }
-      } else {
-        activeClass = 'bg-white border-stone-200 hover:border-[#8b5e3c]';
-        checkClass = 'border-stone-300 bg-white';
-      }
-
-      itemDiv.className = "p-3 rounded-lg border cursor-pointer transition-all flex items-center gap-3 " + activeClass;
-      
-      let textStyle = '';
-      if (item.checked) {
-        if (cat === 'forbidden') {
-          textStyle = 'text-rose-900/60 line-through';
-        } else {
-          textStyle = 'text-emerald-950/60 line-through';
-        }
-      } else {
-        textStyle = cat === 'forbidden' ? 'text-rose-900' : 'text-[#3e2723]';
-      }
-
-      itemDiv.innerHTML = 
-        '<div class="shrink-0 w-4 h-4 rounded border flex items-center justify-center ' + checkClass + '">' +
-          (item.checked ? '<span class="text-[9px] font-black">✓</span>' : '') +
-        '</div>' +
-        '<span class="text-xs font-bold ' + textStyle + '">' + item.text + '</span>';
-      grid.appendChild(itemDiv);
     });
 
-    section.appendChild(grid);
-    container.appendChild(section);
-  });
-
-  const packedCount = prepItems.filter(p => p.checked).length;
-  const progressBadge = document.getElementById('packProgressBadge');
-  if (progressBadge) progressBadge.textContent = "已裝箱：" + packedCount + " / " + prepItems.length;
-}
-    function togglePrep(id) {
-      prepItems = prepItems.map(p => {
-        if (p.id === id) {
-          const updated = !p.checked;
-          if (updated) {
-            playCoinSound();
-          }
-          return { ...p, checked: updated };
-        }
-        return p;
-      });
-      renderPrep();
-      triggerAutoSave();
-    }
-
-    // ==================== 8. 冒險生存工具箱 (Toolkit) ====================
-    function convertTime() {
-      const slider = document.getElementById('tpeTimeSlider');
-      if (!slider) return;
-      const twTime = parseInt(slider.value);
-      document.getElementById('tpeTimeDisplay').textContent = twTime + ":00";
-
-      const pdtRaw = twTime - 15;
-      const pdtTime = (pdtRaw + 24) % 24;
-      document.getElementById('pdtTimeDisplay').textContent = pdtTime + ":00";
-      document.getElementById('pdtDayLabel').textContent = pdtRaw < 0 ? '前一天' : '當天';
-
-      const mstRaw = twTime - 15;
-      const mstTime = (mstRaw + 24) % 24;
-      document.getElementById('mstTimeDisplay').textContent = mstTime + ":00";
-      document.getElementById('mstDayLabel').textContent = mstRaw < 0 ? '前一天' : '當天';
-    }
-
-    function calcUnit(type) {
-      if (type === 'F') {
-        const f = parseFloat(document.getElementById('fVal').value) || 0;
-        document.getElementById('cVal').value = ((f - 32) * 5 / 9).toFixed(1);
-      } else if (type === 'C') {
-        const c = parseFloat(document.getElementById('cVal').value) || 0;
-        document.getElementById('fVal').value = (c * 9 / 5 + 32).toFixed(1);
-      } else if (type === 'M') {
-        const miles = parseFloat(document.getElementById('mileVal').value) || 0;
-        document.getElementById('kmVal').value = (miles * 1.60934).toFixed(1);
-      } else if (type === 'K') {
-        const km = parseFloat(document.getElementById('kmVal').value) || 0;
-        document.getElementById('mileVal').value = (km / 1.60934).toFixed(1);
+    container.addEventListener('mousedown', (e) => {
+      if (e.button === 1 || !isDrawMode || isSpacePressed) {
+        isDragging = true;
+        startX = e.clientX - offsetX;
+        startY = e.clientY - offsetY;
+        container.style.cursor = 'grabbing';
+        e.preventDefault();
       }
-    }
+    });
 
-    // ==================== 雲端 GAS 傳送 / 接收自動同步機制 ====================
-    let autoSaveTimer = null;
-
-    // 自動讀取函數 (網頁開啟時自動觸發)
-    function autoLoadFromGas() {
-      const statusText = document.getElementById('syncStatusText');
-      const indicator = document.getElementById('syncStatusIndicator');
+    window.addEventListener('mousemove', (e) => {
+      const rect = mainCanvas.getBoundingClientRect();
+      const canvasX = Math.floor((e.clientX - rect.left) / scale);
+      const canvasY = Math.floor((e.clientY - rect.top) / scale);
       
-      if (!GAS_URL || GAS_URL.trim() === "") {
-        if (statusText) statusText.textContent = "本地模式 (未連結雲端)";
-        if (indicator) {
-          indicator.className = "w-2 h-2 rounded-full bg-stone-500";
+      if (canvasX >= 0 && canvasX < GRID_SIZE && canvasY >= 0 && canvasY < GRID_SIZE) {
+        document.getElementById('coordDisplay').textContent = `(${canvasX}, ${canvasY})`;
+      }
+
+      if (isDragging) {
+        offsetX = e.clientX - startX;
+        offsetY = e.clientY - startY;
+        draw();
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDragging) {
+        isDragging = false;
+        container.style.cursor = isDrawMode ? 'crosshair' : 'grab';
+      }
+    });
+
+    // 處理著色點擊
+    container.addEventListener('click', (e) => {
+      if (e.button === 0 && isDrawMode && !isSpacePressed) {
+        const rect = mainCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / scale);
+        const y = Math.floor((e.clientY - rect.top) / scale);
+
+        if (x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE) {
+          uploadPixel(x, y, activeColor);
         }
-        return;
       }
+    });
 
-      if (statusText) statusText.textContent = "雲端同步中...";
-      if (indicator) {
-        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-      }
+    // --- 9. 冷卻計時器 UI 運作 ---
+    function startCooldown() {
+      lastPaintTime = Date.now();
+      const timerOverlay = document.getElementById('cooldownTimer');
+      const progressCircle = document.getElementById('cooldownProgress');
+      const secondsSpan = document.getElementById('cooldownSeconds');
+      
+      timerOverlay.style.opacity = '1';
+      
+      if (cooldownInterval) clearInterval(cooldownInterval);
 
-      fetch(GAS_URL)
-      .then(res => {
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => {
-        if (data && data.members) {
-          expenses = data.expenses || [];
-          members = data.members;
-          if (data.foodItems) foodItems = data.foodItems;
-          if (data.prepItems) prepItems = data.prepItems;
+      const totalDash = 88;
+      let timeLeft = COOLDOWN_TIME / 1000;
+      
+      secondsSpan.textContent = Math.ceil(timeLeft);
+      progressCircle.style.strokeDashoffset = '0';
 
-          generateCoins(15);
-          recalculateAll();
-          renderMembers();
-          renderFood();
-          renderPrep();
+      cooldownInterval = setInterval(() => {
+        timeLeft -= 0.1;
+        if (timeLeft <= 0) {
+          clearInterval(cooldownInterval);
+          timerOverlay.style.opacity = '0';
+        } else {
+          secondsSpan.textContent = Math.ceil(timeLeft);
+          const offset = totalDash - (timeLeft / (COOLDOWN_TIME / 1000)) * totalDash;
+          progressCircle.style.strokeDashoffset = offset;
+        }
+      }, 100);
+    }
+
+    // --- 10. 本地 AI 靈感助手 (開啟時會在本地渲染) ---
+    const aiToggle = document.getElementById('toggleAI');
+    setInterval(() => {
+      if (!aiToggle.checked) return;
+
+      // 獲取目前視角邊界，讓 AI 剛好畫在螢幕視野內增加互動
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      const minX = Math.max(0, Math.floor(-offsetX / scale));
+      const maxX = Math.min(GRID_SIZE - 1, Math.floor((w - offsetX) / scale));
+      const minY = Math.max(0, Math.floor(-offsetY / scale));
+      const maxY = Math.min(GRID_SIZE - 1, Math.floor((h - offsetY) / scale));
+
+      if (maxX > minX && maxY > minY) {
+        for (let i = 0; i < 3; i++) {
+          const rx = minX + Math.floor(Math.random() * (maxX - minX));
+          const ry = minY + Math.floor(Math.random() * (maxY - minY));
+          const rColor = uniqueColors[Math.floor(Math.random() * uniqueColors.length)];
           
-          if (statusText) statusText.textContent = "連線成功，數據已同步";
-          if (indicator) {
-            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
-          }
-        } else {
-          if (statusText) statusText.textContent = "已連線 (新試算表)";
-          if (indicator) {
-            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
-          }
+          // 只繪製在本地離屏畫布上，不傳送至雲端 (防止濫用流量)
+          vCtx.fillStyle = rColor;
+          vCtx.fillRect(rx, ry, 1, 1);
         }
-      })
-      .catch(err => {
-        if (statusText) statusText.textContent = "同步失敗，請確認權限";
-        if (indicator) {
-          indicator.className = "w-2 h-2 rounded-full bg-rose-500";
-        }
-      });
-    }
-
-    // 自動背景存檔函數 (任何資料變更時自動觸發)
-    function triggerAutoSave() {
-      if (!GAS_URL || GAS_URL.trim() === "") return;
-
-      const statusText = document.getElementById('syncStatusText');
-      const indicator = document.getElementById('syncStatusIndicator');
-
-      if (statusText) statusText.textContent = "自動同步中...";
-      if (indicator) {
-        indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+        draw();
       }
+    }, 400);
 
-      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    // --- 11. UI 面板操作控制綁定 ---
+    const btnDrawMode = document.getElementById('btnDrawMode');
+    const btnPanMode = document.getElementById('btnPanMode');
 
-      // 防抖動，延遲 1.5 秒執行，避免連續打勾造成重複寫入
-      autoSaveTimer = setTimeout(() => {
-        const payload = {
-          expenses,
-          members,
-          foodItems,
-          prepItems
-        };
-
-        fetch(GAS_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        })
-        .then(() => {
-          if (statusText) statusText.textContent = "進度已自動保存至雲端";
-          if (indicator) {
-            indicator.className = "w-2 h-2 rounded-full bg-emerald-500";
-          }
-        })
-        .catch(err => {
-          if (statusText) statusText.textContent = "雲端同步失敗";
-          if (indicator) {
-            indicator.className = "w-2 h-2 rounded-full bg-rose-500";
-          }
-        });
-      }, 1500);
+    function setMode(drawMode) {
+      isDrawMode = drawMode;
+      if (isDrawMode) {
+        btnDrawMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500";
+        btnPanMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700";
+        container.style.cursor = 'crosshair';
+      } else {
+        btnDrawMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all border border-slate-700";
+        btnPanMode.className = "flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-medium text-sm transition-all shadow-lg shadow-cyan-900/20 border border-cyan-500";
+        container.style.cursor = 'grab';
+      }
     }
 
-    // 網頁開啟時的自動同步
-    window.addEventListener('DOMContentLoaded', () => {
-      // 1. 本地優先渲染 (這樣不論有沒有設定 GAS_URL，大卡與清單都會立刻顯示、不留空白！)
-      renderMembers();
-      recalculateAll();
-      renderDayGrid();
-      selectDay(2); // 預設 Day 3 Chris生日
-      renderFood();
-      renderPrep();
-      convertTime();
-      lucide.createIcons();
+    btnDrawMode.addEventListener('click', () => setMode(true));
+    btnPanMode.addEventListener('click', () => setMode(false));
 
-      // 2. 隨後在背景自動對接雲端（若有設定，將會自動拉取雲端數據進行覆蓋更新）
-      autoLoadFromGas();
+    // 定位與跳轉
+    document.getElementById('btnGoto').addEventListener('click', () => {
+      const x = parseInt(document.getElementById('gotoX').value);
+      const y = parseInt(document.getElementById('gotoY').value);
+      if (isNaN(x) || isNaN(y) || x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE) {
+        showToast('❌ 請輸入 0 - 999 之間的有效座標', 'error');
+        return;
+      }
+      
+      scale = 18;
+      offsetX = container.clientWidth / 2 - x * scale;
+      offsetY = container.clientHeight / 2 - y * scale;
+      draw();
+      showToast(`📍 已傳送至座標: (${x}, ${y})`, 'success');
     });
+
+    // 下載完整 1000x1000 Png
+    document.getElementById('btnSave').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `real_place_canvas_${Date.now()}.png`;
+      link.href = virtualCanvas.toDataURL('image/png');
+      link.click();
+      showToast('💾 成功匯出 1000x1000 百萬像素無損大圖！', 'success');
+    });
+
+    // 重設視野
+    document.getElementById('btnResetView').addEventListener('click', () => {
+      resetViewToCenter();
+      showToast('🔄 視野已重設回畫布中央', 'info');
+    });
+
+    // --- 12. 動態生成調色盤 UI ---
+    const paletteContainer = document.getElementById('palette');
+    const colorHexText = document.getElementById('colorHexText');
+    const colorPreview = document.getElementById('colorPreview');
+
+    uniqueColors.forEach((color, index) => {
+      const btn = document.createElement('button');
+      btn.className = `w-8 h-8 rounded-lg border-2 shrink-0 transition-all hover:scale-110 active:scale-95 ${index === 0 ? 'border-white scale-110' : 'border-transparent'}`;
+      btn.style.backgroundColor = color;
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#palette button').forEach(b => b.classList.remove('border-white', 'scale-110'));
+        btn.classList.add('border-white', 'scale-110');
+        activeColor = color;
+        colorHexText.textContent = color;
+        colorPreview.style.backgroundColor = color;
+        
+        setMode(true);
+      });
+      paletteContainer.appendChild(btn);
+    });
+
+    // --- 13. 微型通知彈出與合成音效 ---
+    function showToast(msg, type = 'info') {
+      const toast = document.getElementById('toast');
+      const text = document.getElementById('toastText');
+      text.textContent = msg;
+      
+      toast.classList.remove('opacity-0');
+      toast.classList.add('opacity-100');
+      
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+      }, 2500);
+    }
+
+    let audioCtx = null;
+    function playSynthSound(freq, type, duration) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        osc.type = type;
+        osc.frequency.value = freq;
+        
+        gainNode.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        // 靜音忽略
+      }
+    }
+
+    // --- 14. 啟動與初始化 ---
+    resizeCanvas();
+    initAuthAndSync();
   </script>
 </body>
 </html>
