@@ -361,11 +361,14 @@
         // ==========================================
         // 4. REAL-TIME DATA SYNCING (RULES 1 & 2)
         // ==========================================
+        // ==========================================
+        // 4. REAL-TIME DATA SYNCING (RULES 1 & 2)
+        // ==========================================
         function startRealtimeSync() {
             if (!user) return;
 
-            // A. 即時同步全服像素 (無複合篩選，直接拉取變更)
-            const pixelsCollection = collection(db, 'artifacts', appId, 'public', 'data', 'pixels');
+            // 💡 關鍵修復：將路徑改為最直接的 'pixels' 單一層級集合
+            const pixelsCollection = collection(db, 'pixels');
             onSnapshot(pixelsCollection, (snapshot) => {
                 snapshot.forEach((doc) => {
                     pixels[doc.id] = doc.data();
@@ -377,8 +380,8 @@
                 console.error("同步像素畫布失敗:", error);
             });
 
-            // B. 即時同步聊天室
-            const chatCollection = collection(db, 'artifacts', appId, 'public', 'data', 'chat');
+            // 💡 關鍵修復：將路徑改為最直接的 'chat' 單一層級集合
+            const chatCollection = collection(db, 'chat');
             onSnapshot(chatCollection, (snapshot) => {
                 const msgs = [];
                 snapshot.forEach((doc) => {
@@ -389,9 +392,8 @@
                         date: data.timestamp ? (data.timestamp.toDate ? data.timestamp.toDate() : new Date()) : new Date()
                     });
                 });
-                // 內存排序聊天內容 (RULE 2)
                 msgs.sort((a, b) => a.date - b.date);
-                renderChat(msgs.slice(-40)); // 僅顯示最新 40 則訊息
+                renderChat(msgs.slice(-40));
             }, (error) => {
                 console.error("同步聊天室失敗:", error);
             });
@@ -676,8 +678,8 @@
             startCooldown();
 
             try {
-                // 雲端更新
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pixels', pixelKey);
+                // 💡 關鍵修復：改為直連 'pixels' 集合
+                const docRef = doc(db, 'pixels', pixelKey);
                 await setDoc(docRef, {
                     color: selectedColor,
                     username,
@@ -781,7 +783,8 @@
             playSynthSound(1000, 0.05, 'sine');
 
             try {
-                const chatCollection = collection(db, 'artifacts', appId, 'public', 'data', 'chat');
+                // 💡 關鍵修復：改為直連 'chat' 集合
+                const chatCollection = collection(db, 'chat');
                 await addDoc(chatCollection, {
                     text,
                     username,
@@ -793,7 +796,6 @@
                 console.error("訊息發送失敗:", err);
             }
         });
-
         // ==========================================
         // 10. GENERATING PALETTE UI & INITIALIZATION
         // ==========================================
