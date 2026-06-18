@@ -547,30 +547,50 @@
         // ==========================================
         // 6. VIEW NAVIGATION (DRAG, PAN, ZOOM, TOUCH)
         // ==========================================
+// ==========================================
+        // 6. VIEW NAVIGATION (修正為：以滑鼠游標為中心縮放)
+        // ==========================================
         function updateTransform() {
             canvasWrapper.style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`;
             zoomIndicator.innerText = `${Math.round(zoom * 25)}%`;
         }
 
-        function handleZoom(amount, isRelative = true) {
+        // 💡 修正後的 handleZoom：支援傳入滑鼠焦點座標 (mouseX, mouseY)
+        function handleZoom(amount, isRelative = true, mouseX = null, mouseY = null) {
             const lastZoom = zoom;
+            
             if (isRelative) {
                 zoom = Math.max(1, Math.min(32, zoom * amount));
             } else {
                 zoom = Math.max(1, Math.min(32, amount));
             }
+
+            // 🎯 核心演算法：如果提供了滑鼠位置，就以滑鼠為中心點計算位移補償
+            if (mouseX !== null && mouseY !== null) {
+                // 算出縮放前後的比例差
+                const zoomFactor = zoom / lastZoom;
+                // 調整平移量，讓滑鼠底下的那顆像素在縮放後依然保持在滑鼠下方
+                pan.x = mouseX - (mouseX - pan.x) * zoomFactor;
+                pan.y = mouseY - (mouseY - pan.y) * zoomFactor;
+            }
+
             playSynthSound(600 + zoom * 20, 0.04, 'triangle');
             updateTransform();
         }
 
-        // 觸控與滑鼠拖曳
-        canvasContainer.addEventListener('mousedown', (e) => {
-            if (e.button === 1 || e.button === 2 || e.shiftKey) {
-                e.preventDefault();
-                isDragging = true;
-                dragStart = { x: e.clientX - pan.x, y: e.clientY - pan.y };
-            }
-        });
+        // 💡 修正後的滾輪事件：將當前的滑鼠座標傳給縮放函式
+        canvasContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.25 : 0.8;
+
+            // 取得滑鼠相對於容器（畫布視窗）的絕對座標
+            const rect = canvasContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            // 執行以滑鼠為中心的縮放
+            handleZoom(factor, true, mouseX, mouseY);
+        }, { passive: false });
 
         window.addEventListener('mousemove', (e) => {
             if (isDragging) {
