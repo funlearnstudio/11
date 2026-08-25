@@ -23,7 +23,24 @@ export default function ThemeBoot(){
       reducedMotion:localStorage.getItem('lexora.reducedMotion')==='true'
     };
     apply(cached);
-    fetch('/api/settings').then(async r=>{if(!r.ok)return;const j=await r.json();if(j.settings)apply(j.settings)}).catch(()=>{});
+
+    // Settings are private account data. Only request them when Auth.js
+    // confirms that a user session exists; public pages should not create
+    // expected 401 requests in the browser console.
+    fetch('/api/auth/session')
+      .then(async sessionResponse=>{
+        if(!sessionResponse.ok)return null;
+        return sessionResponse.json();
+      })
+      .then(async session=>{
+        if(!session?.user)return;
+        const settingsResponse=await fetch('/api/settings');
+        if(!settingsResponse.ok)return;
+        const data=await settingsResponse.json();
+        if(data.settings)apply(data.settings);
+      })
+      .catch(()=>{});
+
     const onSettings=(event:Event)=>apply((event as CustomEvent<Settings>).detail||{});
     window.addEventListener('lexora:settings',onSettings);
     return()=>window.removeEventListener('lexora:settings',onSettings);
