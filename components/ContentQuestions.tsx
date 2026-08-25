@@ -1,0 +1,13 @@
+'use client';
+import Link from 'next/link';
+import { useState } from 'react';
+import SpeakButton from '@/components/SpeakButton';
+
+type Item={_id:string;question:string;options?:string[];type:string;difficulty?:number;category?:string};
+export default function ContentQuestions({items,authenticated}:{items:Item[];authenticated:boolean}){
+  const [answers,setAnswers]=useState<Record<string,string>>({});const [results,setResults]=useState<Record<string,any>>({});const [loading,setLoading]=useState<string|null>(null);
+  if(!items.length)return <div className="card">目前沒有已發布且通過驗證的練習題。</div>;
+  if(!authenticated)return <div className="card"><p>登入後即可作答、查看解析並把錯題自動加入錯題本。</p><Link className="btn primary" href="/login">登入開始練習</Link></div>;
+  async function submit(item:Item){const answer=(answers[item._id]||'').trim();if(!answer||loading)return;setLoading(item._id);try{const r=await fetch('/api/practice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:item._id,answer,durationSeconds:0})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Unable to grade');setResults(v=>({...v,[item._id]:j}))}catch(e:any){setResults(v=>({...v,[item._id]:{error:e.message||'Unable to grade'}}))}finally{setLoading(null)}}
+  return <div className="list">{items.map((item,index)=>{const result=results[item._id];return <article className="card" key={item._id}><p className="muted">{index+1}. {item.type}{item.difficulty?` · difficulty ${item.difficulty}`:''}</p><h3>{item.question} <SpeakButton text={item.question}/></h3>{item.options?.length?<div className="list">{item.options.map(option=><label className="answer-option" key={option}><input type="radio" name={item._id} disabled={!!result&&!result.error} checked={answers[item._id]===option} onChange={()=>setAnswers(v=>({...v,[item._id]:option}))}/><span>{option}</span></label>)}</div>:<input className="input" disabled={!!result&&!result.error} value={answers[item._id]||''} onChange={e=>setAnswers(v=>({...v,[item._id]:e.target.value}))}/>} {!result||result.error?<button className="btn primary" disabled={!answers[item._id]?.trim()||loading===item._id} onClick={()=>submit(item)}>{loading===item._id?'Checking…':'Check answer'}</button>:null}{result?.error?<p role="alert" className="danger">{result.error}</p>:result?<div className={result.correct?'correct-state':'error-state'}><h4>{result.correct?'✓ Correct':'✕ Review this one'}</h4><p><strong>Answer:</strong> {String(result.answer)}</p><p>{result.explanation}</p>{result.optionExplanations?.length?<ul>{result.optionExplanations.map((x:any)=><li key={x.option}><strong>{x.option}:</strong> {x.explanation}</li>)}</ul>:null}</div>:null}</article>})}</div>;
+}

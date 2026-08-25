@@ -1,63 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Types } from 'mongoose';
 import { z } from 'zod';
 import { auth } from '@/auth';
 import { dbConnect } from '@/lib/db';
 import { Vocabulary } from '@/models/Vocabulary';
+import { sameOrigin } from '@/lib/security';
 
-const patchSchema=z.object({
-  id:z.string().min(1),
-  published:z.boolean().optional(),
-  zhTWDefinitions:z.array(z.string().min(1)).optional(),
-  englishDefinitions:z.array(z.string().min(1)).optional(),
-  ipa:z.string().optional(),
-  pronunciation:z.string().optional(),
-  collocations:z.array(z.string()).optional(),
-  commonUsage:z.array(z.string()).optional(),
-  commonMistakes:z.array(z.string()).optional()
-});
-
-async function requireAdmin(){const s=await auth();return (s?.user as any)?.role==='admin'?s:null}
-function escapeRegExp(v:string){return v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
-
-export async function GET(req:NextRequest){
-  if(!await requireAdmin())return NextResponse.json({error:'Forbidden'},{status:403});
-  await dbConnect();
-  const q=req.nextUrl.searchParams.get('q')?.trim()||'';
-  const status=req.nextUrl.searchParams.get('status')||'all';
-  const page=Math.max(1,Number(req.nextUrl.searchParams.get('page'))||1);
-  const limit=30;
-  const filter:any={};
-  if(q)filter.$or=[{word:new RegExp(escapeRegExp(q),'i')},{lemma:new RegExp(escapeRegExp(q),'i')}];
-  if(status==='published')filter.published=true;
-  if(status==='draft')filter.published=false;
-  const [items,total,duplicateGroups]=await Promise.all([
-    Vocabulary.find(filter).select('word lemma ceecLevel partsOfSpeech zhTWDefinitions englishDefinitions ipa published source sourceVerifiedAt').sort({word:1}).skip((page-1)*limit).limit(limit).lean(),
-    Vocabulary.countDocuments(filter),
-    Vocabulary.aggregate([{$group:{_id:{word:{$toLower:'$word'},level:'$ceecLevel'},count:{$sum:1},ids:{$push:'$_id'}}},{$match:{count:{$gt:1}}},{$limit:20}])
-  ]);
-  return NextResponse.json({items,total,page,pages:Math.ceil(total/limit),duplicateGroups});
-}
-
-export async function PATCH(req:NextRequest){
-  if(!await requireAdmin())return NextResponse.json({error:'Forbidden'},{status:403});
-  const parsed=patchSchema.safeParse(await req.json());
-  if(!parsed.success)return NextResponse.json({error:'Invalid payload',issues:parsed.error.issues},{status:400});
-  await dbConnect();
-  const doc=await Vocabulary.findById(parsed.data.id);
-  if(!doc)return NextResponse.json({error:'Vocabulary entry not found'},{status:404});
-  const {id,...changes}=parsed.data;
-  Object.assign(doc,changes);
-  if(changes.published===true){
-    const errors:string[]=[];
-    if(!doc.word?.trim())errors.push('word is required');
-    if(!doc.lemma?.trim())errors.push('lemma is required');
-    if(!Number.isInteger(doc.ceecLevel)||doc.ceecLevel<1||doc.ceecLevel>6)errors.push('CEEC level must be 1–6');
-    if(!doc.partsOfSpeech?.length)errors.push('part of speech is required');
-    if(!doc.zhTWDefinitions?.length)errors.push('Traditional Chinese definition is required');
-    if(!doc.englishDefinitions?.length)errors.push('English definition is required');
-    if(!doc.source?.trim())errors.push('source is required');
-    if(errors.length)return NextResponse.json({error:'Cannot publish',validationErrors:errors},{status:422});
-  }
-  await doc.save();
-  return NextResponse.json({ok:true,id:String(doc._id),published:doc.published});
-}
+const patchSchema=z.object({id:z.string().min(1),published:z.boolean().optional(),zhTWDefinitions:z.array(z.string().trim().min(1)).optional(),englishDefinitions:z.array(z.string().trim().min(1)).optional(),ipa:z.string().max(200).optional(),pronunciation:z.string().max(200).optional(),collocations:z.array(z.string().max(300)).optional(),commonUsage:z.array(z.string().max(1000)).optional(),commonMistakes:z.array(z.string().max(1000)).optional()});
+async function requireAdmin(){const s=await auth();return (s?.user as any)?.role==='admin'?s:null}function escapeRegExp(v:string){return v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+export async function GET(req:NextRequest){if(!await requireAdmin())return NextResponse.json({error:'Forbidden'},{status:403});await dbConnect();const q=(req.nextUrl.searchParams.get('q')?.trim()||'').slice(0,100);const status=req.nextUrl.searchParams.get('status')||'all';const page=Math.max(1,Math.min(10000,Number(req.nextUrl.searchParams.get('page'))||1));const limit=30;const filter:any={};if(q)filter.$or=[{word:new RegExp(escapeRegExp(q),'i')},{lemma:new RegExp(escapeRegExp(q),'i')}];if(status==='published')filter.published=true;if(status==='draft')filter.published=false;const [items,total,duplicateGroups]=await Promise.all([Vocabulary.find(filter).select('word lemma ceecLevel partsOfSpeech zhTWDefinitions englishDefinitions ipa published source sourceVerifiedAt').sort({word:1}).skip((page-1)*limit).limit(limit).lean(),Vocabulary.countDocuments(filter),Vocabulary.aggregate([{$group:{_id:{word:{$toLower:'$word'},level:'$ceecLevel'},count:{$sum:1},ids:{$push:'$_id'}}},{$match:{count:{$gt:1}}},{$limit:20}])]);return NextResponse.json({items,total,page,pages:Math.ceil(total/limit),duplicateGroups});}
+export async function PATCH(req:NextRequest){if(!sameOrigin(req))return NextResponse.json({error:'Cross-origin request blocked'},{status:403});if(!await requireAdmin())return NextResponse.json({error:'Forbidden'},{status:403});const parsed=patchSchema.safeParse(await req.json().catch(()=>null));if(!parsed.success||!Types.ObjectId.isValid(parsed.data?.id||''))return NextResponse.json({error:'Invalid payload',issues:parsed.success?[]:parsed.error.issues},{status:400});await dbConnect();const doc=await Vocabulary.findById(parsed.data.id);if(!doc)return NextResponse.json({error:'Vocabulary entry not found'},{status:404});const {id,...changes}=parsed.data;Object.assign(doc,changes);if(changes.published===true){const errors:string[]=[];if(!doc.word?.trim())errors.push('word is required');if(!doc.lemma?.trim())errors.push('lemma is required');if(!Number.isInteger(doc.ceecLevel)||doc.ceecLevel<1||doc.ceecLevel>6)errors.push('CEEC level must be 1–6');if(!doc.partsOfSpeech?.length)errors.push('part of speech is required');if(!doc.zhTWDefinitions?.length)errors.push('Traditional Chinese definition is required');if(!doc.englishDefinitions?.length)errors.push('English definition is required');if(!doc.source?.trim())errors.push('source is required');if(errors.length)return NextResponse.json({error:'Cannot publish',validationErrors:errors},{status:422})}try{await doc.save()}catch(error:any){if(error?.code===11000)return NextResponse.json({error:'Duplicate vocabulary entry'},{status:409});return NextResponse.json({error:'Unable to save vocabulary'},{status:400})}return NextResponse.json({ok:true,id:String(doc._id),published:doc.published});}
