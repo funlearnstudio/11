@@ -1,0 +1,12 @@
+{
+  "name": "Lexora — Taiwan High School English",
+  "short_name": "Lexora",
+  "description": "CEEC vocabulary, grammar, reading, listening, spaced review, games and exams for Taiwan high school students.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#111111",
+  "icons": [
+    {"src":"/app-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}

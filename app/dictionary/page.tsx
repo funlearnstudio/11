@@ -1,0 +1,16 @@
+import Link from 'next/link';
+import { dbConnect } from '@/lib/db';
+import { Vocabulary } from '@/models/Vocabulary';
+import { SpeakButton } from '@/components/SpeakButton';
+
+export const dynamic='force-dynamic';
+function escapeRegExp(value:string){return value.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function distance(a:string,b:string){const m=Array.from({length:a.length+1},()=>Array(b.length+1).fill(0));for(let i=0;i<=a.length;i++)m[i][0]=i;for(let j=0;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+
+export default async function DictionaryPage({searchParams}:{searchParams:Promise<{q?:string}>}){
+  const {q=''}=await searchParams;const term=q.trim().toLowerCase();await dbConnect();
+  const results:any[]=term?await Vocabulary.find({published:true,$or:[{word:new RegExp(`^${escapeRegExp(term)}`,'i')},{lemma:new RegExp(`^${escapeRegExp(term)}`,'i')}]}).select('word lemma ipa partsOfSpeech ceecLevel zhTWDefinitions englishDefinitions examples collocations synonyms antonyms derivatives morphology').sort({ceecLevel:1,word:1}).limit(20).lean():[];
+  let suggestion:string|null=null;
+  if(term&&results.length===0){const candidates:any[]=await Vocabulary.find({published:true,word:new RegExp(`^${escapeRegExp(term[0]||'')}`,'i')}).select('word').limit(250).lean();const ranked=candidates.map(x=>({word:String(x.word),d:distance(term,String(x.word).toLowerCase())})).sort((a,b)=>a.d-b.d||a.word.localeCompare(b.word));if(ranked[0]&&ranked[0].d<=Math.max(2,Math.floor(term.length/4)))suggestion=ranked[0].word;}
+  return <main className="content"><h1>Dictionary</h1><p className="muted">中英＋英英辭典；內容來自已發布且經驗證的 vocabulary collection。</p><form className="toolbar" role="search"><input className="input" name="q" defaultValue={term} placeholder="Search an English word" autoComplete="off" aria-label="Dictionary search"/><button className="btn primary" type="submit">Search</button></form>{!term?<div className="card">輸入英文單字開始查詢。</div>:results.length===0?<div className="card"><h2>No verified entry found</h2>{suggestion?<p>Did you mean <Link href={`/dictionary?q=${encodeURIComponent(suggestion)}`}><strong>{suggestion}</strong></Link>?</p>:<p>目前資料庫找不到可確認的詞條；系統不會編造辭典內容。</p>}</div>:<div className="list">{results.map(word=><article className="card" key={String(word._id)}><div className="toolbar"><h2 style={{margin:0}}><Link href={`/vocabulary/${encodeURIComponent(word.word)}`}>{word.word}</Link></h2><SpeakButton text={word.word}/></div><p className="muted">{word.ipa||''} · {word.partsOfSpeech?.join(', ')||''} · CEEC Level {word.ceecLevel}</p>{word.zhTWDefinitions?.length?<p><strong>中文：</strong>{word.zhTWDefinitions.join('；')}</p>:null}{word.englishDefinitions?.length?<p><strong>English:</strong> {word.englishDefinitions.join('; ')}</p>:null}{word.examples?.[0]?.text?<p><strong>Example:</strong> {word.examples[0].text} <SpeakButton text={word.examples[0].text}/></p>:null}{word.collocations?.length?<p><strong>Collocations:</strong> {word.collocations.join(', ')}</p>:null}{word.synonyms?.length?<p><strong>Synonyms:</strong> {word.synonyms.join(', ')}</p>:null}{word.antonyms?.length?<p><strong>Antonyms:</strong> {word.antonyms.join(', ')}</p>:null}</article>)}</div>}</main>;
+}
