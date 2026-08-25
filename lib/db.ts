@@ -1,14 +1,19 @@
 import mongoose from 'mongoose';
 
-const mongoUri = process.env.MONGODB_URI;
-if (!mongoUri) throw new Error('MONGODB_URI is not configured');
-const uri: string = mongoUri;
-
-declare global { var __mongoose: Promise<typeof mongoose> | undefined }
+declare global {
+  var __mongoose: Promise<typeof mongoose> | undefined;
+}
 
 export function dbConnect() {
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    throw new Error('MONGODB_URI is not configured');
+  }
+
   if (!global.__mongoose) {
     global.__mongoose = mongoose.connect(uri, { dbName: 'lexora' });
   }
+
   return global.__mongoose;
 }
