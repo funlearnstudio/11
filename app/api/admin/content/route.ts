@@ -1,0 +1,104 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { dbConnect } from '@/lib/db';
+import { GrammarLesson, Article, Question } from '@/models/Learning';
+import { Morphology } from '@/models/Morphology';
+
+const collections = {
+  grammar: GrammarLesson,
+  articles: Article,
+  questions: Question,
+  morphology: Morphology
+} as const;
+
+type ContentType = keyof typeof collections;
+
+async function requireAdmin() {
+  const session = await auth();
+  return (session?.user as any)?.role === 'admin';
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function validationErrors(type: ContentType, doc: any) {
+  const errors: string[] = [];
+  if (type === 'grammar') {
+    if (!doc.slug?.trim()) errors.push('slug is required');
+    if (!doc.title?.trim()) errors.push('title is required');
+    if (!doc.zhExplanation?.trim()) errors.push('Traditional Chinese explanation is required');
+    if (!doc.level) errors.push('level is required');
+    if (!doc.examples?.length) errors.push('at least one verified example is required');
+  }
+  if (type === 'articles') {
+    if (!doc.slug?.trim()) errors.push('slug is required');
+    if (!doc.title?.trim()) errors.push('title is required');
+    if (!doc.category?.trim()) errors.push('category is required');
+    if (!doc.body?.trim() || doc.body.trim().length < 100) errors.push('article body must contain meaningful content');
+    if (!doc.difficulty) errors.push('difficulty is required');
+  }
+  if (type === 'questions') {
+    if (!doc.question?.trim()) errors.push('question is required');
+    if (doc.answer === undefined || doc.answer === null || String(doc.answer).trim() === '') errors.push('answer is required');
+    if (!doc.explanation?.trim()) errors.push('explanation is required');
+    if (!doc.type) errors.push('question type is required');
+    if (Array.isArray(doc.options) && doc.options.length) {
+      const normalized = doc.options.map((x: unknown) => String(x).trim().toLowerCase());
+      if (new Set(normalized).size !== normalized.length) errors.push('options must not contain duplicates');
+      if (!normalized.includes(String(doc.answer).trim().toLowerCase())) errors.push('answer must match one option');
+    }
+  }
+  if (type === 'morphology') {
+    if (!doc.slug?.trim()) errors.push('slug is required');
+    if (!doc.form?.trim()) errors.push('form is required');
+    if (!doc.type) errors.push('type is required');
+    if (!doc.meaningZhTW?.trim()) errors.push('Traditional Chinese meaning is required');
+    if (!doc.meaningEn?.trim()) errors.push('English meaning is required');
+  }
+  return errors;
+}
+
+export async function GET(req: NextRequest) {
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const type = req.nextUrl.searchParams.get('type') as ContentType;
+  if (!type || !(type in collections)) return NextResponse.json({ error: 'Invalid content type' }, { status: 400 });
+  const q = req.nextUrl.searchParams.get('q')?.trim() || '';
+  const status = req.nextUrl.searchParams.get('status') || 'all';
+  const page = Math.max(1, Number(req.nextUrl.searchParams.get('page')) || 1);
+  const limit = 30;
+  await dbConnect();
+  const model: any = collections[type];
+  const filter: any = {};
+  if (status === 'published') filter.published = true;
+  if (status === 'draft') filter.published = false;
+  if (q) {
+    const regex = new RegExp(escapeRegExp(q), 'i');
+    const fields = type === 'questions' ? ['question', 'explanation'] : type === 'morphology' ? ['form', 'meaningZhTW', 'meaningEn'] : ['title', 'slug'];
+    filter.$or = fields.map(field => ({ [field]: regex }));
+  }
+  const [items, total] = await Promise.all([
+    model.find(filter).sort({ updatedAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    model.countDocuments(filter)
+  ]);
+  return NextResponse.json({ type, items, total, page, pages: Math.ceil(total / limit) });
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!await requireAdmin()) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const body = await req.json();
+  const type = body.type as ContentType;
+  if (!type || !(type in collections) || typeof body.id !== 'string') return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+  await dbConnect();
+  const model: any = collections[type];
+  const doc = await model.findById(body.id);
+  if (!doc) return NextResponse.json({ error: 'Content not found' }, { status: 404 });
+  const editable = ['published','title','slug','zhExplanation','level','category','body','difficulty','question','options','answer','explanation','form','meaningZhTW','meaningEn','origin'];
+  for (const key of editable) if (Object.prototype.hasOwnProperty.call(body, key)) doc[key] = body[key];
+  if (body.published === true) {
+    const errors = validationErrors(type, doc);
+    if (errors.length) return NextResponse.json({ error: 'Cannot publish', validationErrors: errors }, { status: 422 });
+  }
+  await doc.save();
+  return NextResponse.json({ ok: true, id: String(doc._id), published: !!doc.published });
+}
