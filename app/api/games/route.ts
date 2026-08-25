@@ -7,6 +7,8 @@ import { User } from '@/models/User';
 
 const allowedGames = new Set(['word-match','definition-match','speed-quiz','spelling-challenge','falling-words','sentence-builder','cloze-challenge','root-builder','vocabulary-battle','memory-cards']);
 
+type XpUser={xp?:number};
+
 export async function GET(req:Request){
   const s=await auth();
   if(!s?.user)return NextResponse.json({error:'Unauthorized'},{status:401});
@@ -21,8 +23,8 @@ export async function GET(req:Request){
   const rounds=words.slice(0,10).map((w:any,idx:number)=>{
     let prompt=w.word;
     let answer=w.zhTWDefinitions?.[0]||'';
-    if(mode==='definition-match'){prompt=w.englishDefinitions?.[0]||w.word; answer=w.word;}
-    if(mode==='spelling-challenge'){prompt=w.zhTWDefinitions?.[0]||'Listen and spell'; answer=w.word;}
+    if(mode==='definition-match'){prompt=w.englishDefinitions?.[0]||w.word;answer=w.word;}
+    if(mode==='spelling-challenge'){prompt=w.zhTWDefinitions?.[0]||'Listen and spell';answer=w.word;}
     const answerPool=mode==='definition-match'||mode==='spelling-challenge'
       ? words.filter((_:any,i:number)=>i!==idx).map((x:any)=>x.word)
       : words.filter((_:any,i:number)=>i!==idx).map((x:any)=>x.zhTWDefinitions?.[0]).filter(Boolean);
@@ -45,6 +47,6 @@ export async function POST(req:Request){
   const xpEarned=Math.min(200,Math.floor(score/20)+correctCount*2);
   await dbConnect();
   const result=await GameResult.create({userId,game,score,accuracy:correctCount/total,correctCount,wrongCount,vocabularyIds:Array.isArray(b.vocabularyIds)?b.vocabularyIds:[],xpEarned,durationSeconds:Math.max(0,Number(b.durationSeconds)||0),completedAt:new Date()});
-  const user=await User.findByIdAndUpdate(userId,{$inc:{xp:xpEarned}},{new:true}).lean();
+  const user=await User.findByIdAndUpdate(userId,{$inc:{xp:xpEarned}},{new:true}).lean() as XpUser|null;
   return NextResponse.json({id:String(result._id),xpEarned,totalXp:user?.xp||0});
 }

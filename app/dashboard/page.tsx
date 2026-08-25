@@ -11,6 +11,8 @@ import DailyTasks from '@/components/DailyTasks';
 
 export const dynamic='force-dynamic';
 
+type DashboardUser={xp?:number;level?:number;streak?:number};
+
 export default async function Dashboard(){
   const session=await auth();
   if(!session?.user)redirect('/login');
@@ -19,7 +21,7 @@ export default async function Dashboard(){
   const objectId=new Types.ObjectId(userId);
   const now=new Date();
   const [user,vocabCount,learned,mastered,due,grammar,reading,exams,games,study]=await Promise.all([
-    User.findById(userId).select('xp level streak').lean(),
+    User.findById(userId).select('xp level streak').lean() as Promise<DashboardUser|null>,
     Vocabulary.countDocuments({published:true}),
     VocabularyProgress.countDocuments({userId,reviewCount:{$gt:0}}),
     VocabularyProgress.countDocuments({userId,status:'mastered'}),

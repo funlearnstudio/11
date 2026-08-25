@@ -8,6 +8,8 @@ import { authConfig } from '@/auth.config';
 
 const credentialsSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 
+type LeanUser = { _id: unknown; displayName: string; email: string; passwordHash: string; role: 'user'|'admin' };
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
@@ -23,7 +25,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const parsed = credentialsSchema.safeParse(raw);
       if (!parsed.success) return null;
       await dbConnect();
-      const user = await User.findOne({ email: parsed.data.email.toLowerCase() }).lean();
+      const user = await User.findOne({ email: parsed.data.email.toLowerCase() }).lean() as LeanUser | null;
       if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) return null;
       return { id: String(user._id), name: user.displayName, email: user.email, role: user.role } as any;
     }

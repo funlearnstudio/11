@@ -1,16 +1,20 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { dbConnect } from '@/lib/db';
-import { DailyTask, VocabularyProgress, GrammarProgress, ReadingProgress, ExamAttempt } from '@/models/Learning';
+import { DailyTask, GrammarProgress, ReadingProgress, ExamAttempt } from '@/models/Learning';
+import { VocabularyProgress } from '@/models/VocabularyProgress';
 import { User } from '@/models/User';
 
 function dateKey(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Taipei'}).format(new Date());}
 
+type UserSettingsDoc={settings?:{dailyNewWordGoal?:number;dailyReviewGoal?:number}};
+
 export async function GET(){
-  const s=await auth(); const userId=(s?.user as any)?.id;
+  const s=await auth();
+  const userId=(s?.user as any)?.id;
   if(!userId)return NextResponse.json({error:'Unauthorized'},{status:401});
   await dbConnect();
-  const user=await User.findById(userId).select('settings').lean();
+  const user=await User.findById(userId).select('settings').lean() as UserSettingsDoc|null;
   const key=dateKey();
   let task=await DailyTask.findOne({userId,dateKey:key});
   if(!task){
@@ -22,7 +26,7 @@ export async function GET(){
       {key:'quiz',target:1,progress:0,completed:false}
     ]});
   }
-  const start=new Date(); start.setHours(0,0,0,0);
+  const start=new Date();start.setHours(0,0,0,0);
   const [newWords,reviews,grammar,reading,quiz]=await Promise.all([
     VocabularyProgress.countDocuments({userId,firstSeenAt:{$gte:start}}),
     VocabularyProgress.countDocuments({userId,lastReviewedAt:{$gte:start}}),

@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 
-const uri = process.env.MONGODB_URI;
-if (!uri) throw new Error('MONGODB_URI is not configured');
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri) throw new Error('MONGODB_URI is not configured');
+const uri: string = mongoUri;
 
 declare global { var __mongoose: Promise<typeof mongoose> | undefined }
 
