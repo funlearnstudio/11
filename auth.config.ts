@@ -6,6 +6,17 @@ const protectedPrefixes = [
 
 export const authConfig = {
   pages: { signIn: '/login' },
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === 'production' ? '__Secure-lexora.session-token' : 'lexora.session-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    }
+  },
   callbacks: {
     authorized({ auth, request }) {
       const pathname = request.nextUrl.pathname;
