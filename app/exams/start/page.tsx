@@ -1,0 +1,2 @@
+import ExamRunner from '@/components/ExamRunner';
+export default async function StartExam({searchParams}:{searchParams:Promise<{type?:string;count?:string}>}){const p=await searchParams; const type=p.type||'mixed'; const count=Math.max(5,Math.min(50,Number(p.count)||20)); return <main className="content"><h1>{type[0].toUpperCase()+type.slice(1)} Exam</h1><ExamRunner type={type} count={count}/></main>}

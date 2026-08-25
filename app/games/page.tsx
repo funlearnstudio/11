@@ -1,0 +1,3 @@
+import Link from 'next/link';
+const games=[['Word Match','word-match'],['Definition Match','definition-match'],['Speed Quiz','speed-quiz'],['Spelling Challenge','spelling'],['Falling Words','falling-words'],['Sentence Builder','sentence-builder'],['Cloze Challenge','cloze'],['Root Builder','root-builder'],['Vocabulary Battle','battle'],['Memory Cards','memory-cards']] as const;
+export default function GamesPage(){return <main className="content"><h1>Games</h1><p className="muted">遊戲會從你的學習詞彙與已驗證題庫抽題；沒有可用資料時不會產生假題目。</p><div className="grid">{games.map(([name,slug])=><div className="card" key={slug}><h2>{name}</h2><Link className="btn primary" href={`/games/${slug}`}>Play</Link></div>)}</div></main>}

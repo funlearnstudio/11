@@ -1,0 +1,15 @@
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+
+type Q = { _id:string; question:string; options?:string[]; type:string; difficulty:number };
+export default function ExamRunner({ type, count }:{ type:string; count:number }) {
+  const [questions,setQuestions]=useState<Q[]>([]); const [answers,setAnswers]=useState<Record<string,string>>({});
+  const [index,setIndex]=useState(0); const [flagged,setFlagged]=useState<string[]>([]); const [startedAt]=useState(Date.now());
+  const [result,setResult]=useState<any>(null); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
+  useEffect(()=>{ fetch(`/api/exams/start?type=${encodeURIComponent(type)}&count=${count}`).then(async r=>{const j=await r.json(); if(!r.ok) throw new Error(j.error||'Unable to load exam'); setQuestions(j.questions)}).catch(e=>setError(e.message)).finally(()=>setLoading(false)); },[type,count]);
+  const q=questions[index]; const progress=useMemo(()=>questions.length ? Math.round(((index+1)/questions.length)*100):0,[index,questions.length]);
+  async function submit(){ if(!confirm('確定交卷？交卷後將立即評分。')) return; const res=await fetch('/api/exams/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,answers,durationSeconds:Math.round((Date.now()-startedAt)/1000),questionIds:questions.map(x=>x._id)})}); const j=await res.json(); if(!res.ok){setError(j.error||'Submit failed');return;} setResult(j); }
+  if(loading) return <div className="card">Loading exam…</div>; if(error) return <div className="card">{error}</div>; if(!questions.length) return <div className="card">沒有足夠的已驗證題目可建立考卷。</div>;
+  if(result) return <div className="card"><h2>Exam Result</h2><p><strong>Score:</strong> {result.score}</p><p><strong>Accuracy:</strong> {result.accuracy}%</p><p><strong>Time:</strong> {result.durationSeconds}s</p><div className="list">{result.review.map((r:any)=><div className="wordrow" key={r.questionId}><span>{r.correct?'✓':'✕'} {r.question}</span><span>{String(r.answer)}</span><span>{r.correct?'Correct':'Review'}</span></div>)}</div></div>;
+  return <div className="card"><div className="toolbar"><strong>{index+1}/{questions.length}</strong><span className="muted">{progress}%</span><button className="btn" onClick={()=>setFlagged(f=>f.includes(q._id)?f.filter(x=>x!==q._id):[...f,q._id])}>{flagged.includes(q._id)?'Unflag':'Flag'}</button></div><h2>{q.question}</h2>{q.options?.length ? <div className="list">{q.options.map(opt=><label className="card" key={opt}><input type="radio" name={q._id} checked={answers[q._id]===opt} onChange={()=>setAnswers(a=>({...a,[q._id]:opt}))}/> {opt}</label>)}</div> : <input className="input" value={answers[q._id]||''} onChange={e=>setAnswers(a=>({...a,[q._id]:e.target.value}))}/>}<div className="toolbar"><button className="btn" disabled={index===0} onClick={()=>setIndex(i=>i-1)}>Previous</button><button className="btn" disabled={index===questions.length-1} onClick={()=>setIndex(i=>i+1)}>Next</button><button className="btn primary" onClick={submit}>Submit</button></div></div>;
+}
