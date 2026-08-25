@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import GlobalSearch from '@/components/GlobalSearch';
 
 export const metadata: Metadata = {
   title: { default: 'Lexora — Taiwan High School English', template: '%s | Lexora' },
@@ -9,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="zh-Hant"><body>{children}</body></html>;
+  return <html lang="zh-Hant"><body>{children}<GlobalSearch/></body></html>;
 }

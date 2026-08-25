@@ -1,7 +1,24 @@
+import { redirect } from 'next/navigation';
 import { auth } from '@/auth';
 import { dbConnect } from '@/lib/db';
 import { User } from '@/models/User';
 import { VocabularyProgress } from '@/models/VocabularyProgress';
-import { GrammarProgress, ReadingProgress } from '@/models/UserLearning';
-import { ExamAttempt } from '@/models/Learning';
-export default async function ProfilePage(){const s=await auth();const id=(s?.user as any)?.id;await dbConnect();const [u,learned,mastered,reading,grammar,exams]=await Promise.all([User.findById(id).lean(),VocabularyProgress.countDocuments({userId:id,reviewCount:{$gt:0}}),VocabularyProgress.countDocuments({userId:id,status:'mastered'}),ReadingProgress.countDocuments({userId:id,completedAt:{$exists:true}}),GrammarProgress.countDocuments({userId:id,completed:true}),ExamAttempt.countDocuments({userId:id,completedAt:{$exists:true}})]);return <main className="content"><h1>Profile</h1><div className="card"><h2>{u?.displayName}</h2><p className="muted">Joined {u?.createdAt?new Date(u.createdAt).toLocaleDateString('zh-TW'):''}</p><div className="grid"><div><strong>Level</strong><p>{u?.level||1}</p></div><div><strong>XP</strong><p>{u?.xp||0}</p></div><div><strong>Streak</strong><p>{u?.streak||0}</p></div><div><strong>Learned</strong><p>{learned}</p></div><div><strong>Mastered</strong><p>{mastered}</p></div><div><strong>Reading</strong><p>{reading}</p></div><div><strong>Grammar</strong><p>{grammar}</p></div><div><strong>Exams</strong><p>{exams}</p></div></div></div></main>}
+import { GrammarProgress, ReadingProgress, ExamAttempt } from '@/models/Learning';
+
+export const dynamic = 'force-dynamic';
+
+export default async function ProfilePage(){
+  const s=await auth();
+  if(!s?.user) redirect('/login');
+  const id=(s.user as any).id;
+  await dbConnect();
+  const [u,learned,mastered,reading,grammar,exams]=await Promise.all([
+    User.findById(id).lean(),
+    VocabularyProgress.countDocuments({userId:id,reviewCount:{$gt:0}}),
+    VocabularyProgress.countDocuments({userId:id,status:'mastered'}),
+    ReadingProgress.countDocuments({userId:id,completedAt:{$exists:true}}),
+    GrammarProgress.countDocuments({userId:id,status:{$in:['completed','mastered']}}),
+    ExamAttempt.countDocuments({userId:id,completedAt:{$exists:true}})
+  ]);
+  return <main className="content"><h1>Profile</h1><div className="card"><h2>{u?.displayName}</h2><p className="muted">Joined {u?.createdAt?new Date(u.createdAt).toLocaleDateString('zh-TW'):''}</p><div className="grid"><div><strong>Level</strong><p>{u?.level||1}</p></div><div><strong>XP</strong><p>{u?.xp||0}</p></div><div><strong>Streak</strong><p>{u?.streak||0}</p></div><div><strong>Learned</strong><p>{learned}</p></div><div><strong>Mastered</strong><p>{mastered}</p></div><div><strong>Reading</strong><p>{reading}</p></div><div><strong>Grammar</strong><p>{grammar}</p></div><div><strong>Exams</strong><p>{exams}</p></div></div></div></main>;
+}
