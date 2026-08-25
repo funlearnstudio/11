@@ -1,50 +1,20 @@
 'use client';
-import { useEffect, useState } from 'react';
+import {useEffect,useState} from 'react';
 
-type ContentType = 'grammar'|'articles'|'questions'|'morphology';
+type ContentType='grammar'|'articles'|'questions'|'morphology';
+function label(item:any,type:ContentType){if(type==='questions')return item.question;if(type==='morphology')return `${item.form} · ${item.type}`;return item.title||item.slug}
 
-function label(item:any,type:ContentType){
-  if(type==='questions')return item.question;
-  if(type==='morphology')return `${item.form} · ${item.type}`;
-  return item.title||item.slug;
+function Editor({item,type,onSaved,onCancel}:{item:any;type:ContentType;onSaved:(v:any)=>void;onCancel:()=>void}){
+  const [v,setV]=useState<any>({...item,options:Array.isArray(item.options)?item.options.join('\n'):item.options||''});const [status,setStatus]=useState('');
+  async function save(publish?:boolean){setStatus('Saving…');const payload:any={type,id:String(item._id)};const fields=type==='grammar'?['title','slug','zhExplanation','level']:type==='articles'?['title','slug','category','body','difficulty']:type==='questions'?['question','options','answer','explanation','difficulty']:['form','meaningZhTW','meaningEn','origin'];for(const key of fields)payload[key]=key==='options'?String(v.options||'').split('\n').map((x:string)=>x.trim()).filter(Boolean):key==='difficulty'?Number(v[key]):v[key];if(typeof publish==='boolean')payload.published=publish;const r=await fetch('/api/admin/content',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});const j=await r.json();if(!r.ok){setStatus((j.validationErrors||[j.error||'Unable to save']).join(' · '));return}setStatus('Saved');onSaved({...item,...payload,published:j.published})}
+  return <div className="admin-editor"><div className="grid two-col">{type==='grammar'?<><label>Title<input className="input" value={v.title||''} onChange={e=>setV({...v,title:e.target.value})}/></label><label>Slug<input className="input" value={v.slug||''} onChange={e=>setV({...v,slug:e.target.value})}/></label><label>Level<select className="select" value={v.level||'foundation'} onChange={e=>setV({...v,level:e.target.value})}><option>foundation</option><option>intermediate</option><option>advanced</option></select></label><label className="full-field">中文說明<textarea className="input" rows={8} value={v.zhExplanation||''} onChange={e=>setV({...v,zhExplanation:e.target.value})}/></label></>:type==='articles'?<><label>Title<input className="input" value={v.title||''} onChange={e=>setV({...v,title:e.target.value})}/></label><label>Slug<input className="input" value={v.slug||''} onChange={e=>setV({...v,slug:e.target.value})}/></label><label>Category<input className="input" value={v.category||''} onChange={e=>setV({...v,category:e.target.value})}/></label><label>Difficulty<input className="input" type="number" min="1" max="5" value={v.difficulty||1} onChange={e=>setV({...v,difficulty:Number(e.target.value)})}/></label><label className="full-field">Article body<textarea className="input" rows={14} value={v.body||''} onChange={e=>setV({...v,body:e.target.value})}/></label></>:type==='questions'?<><label className="full-field">Question<textarea className="input" rows={4} value={v.question||''} onChange={e=>setV({...v,question:e.target.value})}/></label><label>Answer<input className="input" value={String(v.answer||'')} onChange={e=>setV({...v,answer:e.target.value})}/></label><label>Difficulty<input className="input" type="number" min="1" max="5" value={v.difficulty||1} onChange={e=>setV({...v,difficulty:Number(e.target.value)})}/></label><label className="full-field">Options — one per line<textarea className="input" rows={6} value={v.options||''} onChange={e=>setV({...v,options:e.target.value})}/></label><label className="full-field">Explanation<textarea className="input" rows={6} value={v.explanation||''} onChange={e=>setV({...v,explanation:e.target.value})}/></label></>:<><label>Form<input className="input" value={v.form||''} onChange={e=>setV({...v,form:e.target.value})}/></label><label>中文意思<input className="input" value={v.meaningZhTW||''} onChange={e=>setV({...v,meaningZhTW:e.target.value})}/></label><label>English meaning<input className="input" value={v.meaningEn||''} onChange={e=>setV({...v,meaningEn:e.target.value})}/></label><label>Origin<input className="input" value={v.origin||''} onChange={e=>setV({...v,origin:e.target.value})}/></label></>}</div><div className="toolbar"><button className="btn primary" onClick={()=>void save()}>Save draft</button><button className="btn" onClick={()=>void save(true)}>Validate & publish</button><button className="btn" onClick={onCancel}>Cancel</button><span className="muted" role="status">{status}</span></div></div>
 }
 
 export default function AdminContentManager({type}:{type:ContentType}){
-  const [q,setQ]=useState('');
-  const [status,setStatus]=useState('all');
-  const [items,setItems]=useState<any[]>([]);
-  const [loading,setLoading]=useState(false);
-  const [message,setMessage]=useState('');
-
-  async function load(){
-    setLoading(true);setMessage('');
-    try{
-      const r=await fetch(`/api/admin/content?type=${type}&q=${encodeURIComponent(q)}&status=${status}`);
-      const j=await r.json();
-      if(!r.ok)throw new Error(j.error||'Unable to load content');
-      setItems(j.items||[]);
-    }catch(e:any){setMessage(e.message||'Unable to load content')}
-    finally{setLoading(false)}
-  }
-  useEffect(()=>{load()},[type,status]);
-
-  async function toggle(item:any){
-    setMessage('Saving…');
-    const r=await fetch('/api/admin/content',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,id:String(item._id),published:!item.published})});
-    const j=await r.json();
-    if(!r.ok){setMessage((j.validationErrors||[j.error||'Unable to save']).join(' · '));return}
-    setMessage('Saved');
-    setItems(xs=>xs.map(x=>String(x._id)===String(item._id)?{...x,published:j.published}:x));
-  }
-
-  return <div>
-    <div className="toolbar">
-      <input className="input" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')load()}} placeholder={`Search ${type}`}/>
-      <select className="select" value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All</option><option value="published">Published</option><option value="draft">Draft</option></select>
-      <button className="btn primary" onClick={load}>Search</button>
-    </div>
-    <p className="muted" role="status">{loading?'Loading…':message}</p>
-    <div className="list">{items.map(item=><article className="card" key={String(item._id)}><div className="toolbar" style={{justifyContent:'space-between'}}><div><strong>{label(item,type)}</strong><div className="muted">{item.published?'Published':'Draft'} · updated {item.updatedAt?new Date(item.updatedAt).toLocaleDateString('zh-TW'):''}</div></div><button className="btn" onClick={()=>toggle(item)}>{item.published?'Unpublish':'Validate & publish'}</button></div>{type==='questions'?<p>{item.explanation}</p>:type==='articles'?<p>{String(item.body||'').slice(0,180)}{String(item.body||'').length>180?'…':''}</p>:type==='grammar'?<p>{item.zhExplanation}</p>:<p>{item.meaningZhTW} · {item.meaningEn}</p>}</article>)}</div>
-    {!loading&&!items.length?<div className="card">No matching content.</div>:null}
-  </div>;
+  const [q,setQ]=useState('');const [status,setStatus]=useState('all');const [items,setItems]=useState<any[]>([]);const [loading,setLoading]=useState(false);const [message,setMessage]=useState('');const [editing,setEditing]=useState<string|null>(null);
+  async function load(){setLoading(true);setMessage('');try{const r=await fetch(`/api/admin/content?type=${type}&q=${encodeURIComponent(q)}&status=${status}`);const j=await r.json();if(!r.ok)throw new Error(j.error||'Unable to load content');setItems(j.items||[])}catch(e:any){setMessage(e.message||'Unable to load content')}finally{setLoading(false)}}
+  useEffect(()=>{void load()},[type,status]);
+  async function toggle(item:any){setMessage('Saving…');const r=await fetch('/api/admin/content',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,id:String(item._id),published:!item.published})});const j=await r.json();if(!r.ok){setMessage((j.validationErrors||[j.error||'Unable to save']).join(' · '));return}setMessage('Saved');setItems(xs=>xs.map(x=>String(x._id)===String(item._id)?{...x,published:j.published}:x))}
+  function replace(next:any){setItems(xs=>xs.map(x=>String(x._id)===String(next._id)?next:x));setEditing(null)}
+  return <div><div className="toolbar"><input className="input" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')void load()}} placeholder={`Search ${type}`}/><select className="select" value={status} onChange={e=>setStatus(e.target.value)}><option value="all">All</option><option value="published">Published</option><option value="draft">Draft</option></select><button className="btn primary" onClick={()=>void load()}>Search</button></div><p className="muted" role="status">{loading?'Loading…':message}</p><div className="list">{items.map(item=><article className="card" key={String(item._id)}><div className="toolbar" style={{justifyContent:'space-between'}}><div><strong>{label(item,type)}</strong><div className="muted">{item.published?'Published':'Draft'} · updated {item.updatedAt?new Date(item.updatedAt).toLocaleDateString('zh-TW'):''}</div></div><div className="toolbar"><button className="btn" onClick={()=>setEditing(editing===String(item._id)?null:String(item._id))}>{editing===String(item._id)?'Close editor':'Edit'}</button><button className="btn" onClick={()=>void toggle(item)}>{item.published?'Unpublish':'Validate & publish'}</button></div></div>{editing===String(item._id)?<Editor item={item} type={type} onSaved={replace} onCancel={()=>setEditing(null)}/>:type==='questions'?<p>{item.explanation}</p>:type==='articles'?<p>{String(item.body||'').slice(0,220)}{String(item.body||'').length>220?'…':''}</p>:type==='grammar'?<p>{item.zhExplanation}</p>:<p>{item.meaningZhTW} · {item.meaningEn}</p>}</article>)}</div>{!loading&&!items.length?<div className="card">No matching content.</div>:null}</div>;
 }
