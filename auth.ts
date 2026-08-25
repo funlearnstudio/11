@@ -4,12 +4,13 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { dbConnect } from '@/lib/db';
 import { User } from '@/models/User';
+import { authConfig } from '@/auth.config';
 
 const credentialsSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
-  pages: { signIn: '/login' },
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === 'production' ? '__Secure-lexora.session-token' : 'lexora.session-token',
@@ -28,7 +29,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }
   })],
   callbacks: {
-    jwt({ token, user }) { if (user) { token.id = user.id; token.role = (user as any).role; } return token; },
-    session({ session, token }) { if (session.user) { (session.user as any).id = token.id; (session.user as any).role = token.role; } return session; }
+    ...authConfig.callbacks,
+    jwt({ token, user }) {
+      if (user) { token.id = user.id; token.role = (user as any).role; }
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user) {
+        (session.user as any).id = token.id;
+        (session.user as any).role = token.role;
+      }
+      return session;
+    }
   }
 });
